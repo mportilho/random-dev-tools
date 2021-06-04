@@ -1,4 +1,4 @@
-package io.github.mportilho.truststore;
+package io.github.mportilho.cacerts;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;

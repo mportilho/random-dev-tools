@@ -1,4 +1,4 @@
-package io.github.mportilho.truststore;
+package io.github.mportilho.cacerts;
 
 import java.util.Objects;
 

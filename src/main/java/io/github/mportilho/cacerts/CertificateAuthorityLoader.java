@@ -1,4 +1,4 @@
-package io.github.mportilho.truststore;
+package io.github.mportilho.cacerts;
 
 import io.github.mportilho.assertions.Asserts;
 import io.github.mportilho.resources.ResourceLoader;

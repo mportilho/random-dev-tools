@@ -1,6 +1,5 @@
-package io.github.mportilho.truststore;
+package io.github.mportilho.cacerts;
 
-import javax.naming.ConfigurationException;
 import javax.net.ssl.*;
 import java.security.*;
 import java.util.ArrayList;
