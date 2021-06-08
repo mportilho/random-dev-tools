@@ -4,19 +4,19 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
-public class ThousandBlockNumber {
+public class ThousandBlocksNumber {
 
     private final int signal;
-    private final List<BigDecimal> wholeNumberBlocks;
-    private final List<BigDecimal> fractionalNumberBlocks;
+    private final List<Long> wholeNumberBlocks;
+    private final List<Long> fractionalNumberBlocks;
 
-    public ThousandBlockNumber() {
+    public ThousandBlocksNumber() {
         this.signal = 1;
         this.wholeNumberBlocks = Collections.emptyList();
         this.fractionalNumberBlocks = Collections.emptyList();
     }
 
-    public ThousandBlockNumber(int signal, List<BigDecimal> wholeNumberBlocks, List<BigDecimal> fractionalNumberBlocks) {
+    public ThousandBlocksNumber(int signal, List<Long> wholeNumberBlocks, List<Long> fractionalNumberBlocks) {
         this.signal = signal;
         this.wholeNumberBlocks = wholeNumberBlocks;
         this.fractionalNumberBlocks = fractionalNumberBlocks;
@@ -26,17 +26,17 @@ public class ThousandBlockNumber {
         return signal;
     }
 
-    public List<BigDecimal> getWholeNumberBlocks() {
+    public List<Long> getWholeNumberBlocks() {
         return wholeNumberBlocks;
     }
 
-    public List<BigDecimal> getFractionalNumberBlocks() {
+    public List<Long> getFractionalNumberBlocks() {
         return fractionalNumberBlocks;
     }
 
     @Override
     public String toString() {
-        return "ThousandBlockNumber{" +
+        return "ThousandBlocksNumber{" +
                 "signal=" + signal +
                 ", wholeNumberBlocks=" + wholeNumberBlocks +
                 ", fractionalNumberBlocks=" + fractionalNumberBlocks +
