@@ -88,6 +88,9 @@ public class Numbers2WordsParser {
         if (number == null) {
             return Collections.emptyList();
         }
+        if (number.compareTo(BigDecimal.ZERO) == 0) {
+            return Collections.singletonList(0l);
+        }
         number = number.abs().stripTrailingZeros();
         List<Long> blocks = new ArrayList<>();
         while (number.compareTo(BigDecimal.ZERO) > 0) {
