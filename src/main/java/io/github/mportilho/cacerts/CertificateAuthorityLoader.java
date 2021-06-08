@@ -41,16 +41,13 @@ public final class CertificateAuthorityLoader {
         Objects.requireNonNull(certificateLocation, "Certification location type must be informed");
         Asserts.assertNotEmpty(path, "Path to certificate must be informed");
         switch (certificateLocation) {
-            case FILE_SYSTEM -> {
+            case FILE_SYSTEM:
+            case JAR_FILE:
                 return CertificateAuthorityLoader.loadFromFileSystem(path);
-            }
-            case JAR_FILE -> {
-                return CertificateAuthorityLoader.loadFromApplicationJar(path);
-            }
-            case CLASSPATH -> {
+            case CLASSPATH:
                 return CertificateAuthorityLoader.loadFromClasspath(path);
-            }
-            default -> throw new IllegalStateException("Unexpected value: " + certificateLocation);
+            default:
+                throw new IllegalStateException("Unexpected value: " + certificateLocation);
         }
     }
 

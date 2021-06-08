@@ -132,11 +132,4 @@ $RECYCLE.BIN/
 **/node_modules
 /node_modules
 **/.vscode
-
-# Basa-web bundles #
-####################
-**/WEB-INF/resources/js/**
-**/WEB-INF/resources/css/**
-**/WEB-INF/resources/fonts/**
-**/WEB-INF/resources/images/**
-**/WEB-INF/resources/vendor/**
+/.idea/

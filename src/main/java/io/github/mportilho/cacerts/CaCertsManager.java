@@ -13,7 +13,7 @@ public final class CaCertsManager {
 
     static {
         CERT_EXTENSIONS.addAll(CertificateAssemblerX509.CERT_EXTENSIONS);
-        CERT_EXTENSIONS.addAll(CertificateAssemblerJKS.CERT_EXTENSIONS);
+//        CERT_EXTENSIONS.addAll(CertificateAssemblerJKS.CERT_EXTENSIONS);
         CERT_EXTENSIONS.addAll(CertificateAssemblerPKCS7.CERT_EXTENSIONS);
     }
 
