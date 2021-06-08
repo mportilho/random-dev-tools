@@ -1,6 +1,7 @@
 package io.github.mportilho.numbers2words;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 public class ThousandBlockNumber {
@@ -8,6 +9,12 @@ public class ThousandBlockNumber {
     private final int signal;
     private final List<BigDecimal> wholeNumberBlocks;
     private final List<BigDecimal> fractionalNumberBlocks;
+
+    public ThousandBlockNumber() {
+        this.signal = 1;
+        this.wholeNumberBlocks = Collections.emptyList();
+        this.fractionalNumberBlocks = Collections.emptyList();
+    }
 
     public ThousandBlockNumber(int signal, List<BigDecimal> wholeNumberBlocks, List<BigDecimal> fractionalNumberBlocks) {
         this.signal = signal;

@@ -1,43 +1,30 @@
 package io.github.mportilho.numbers2words;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class Numbers2WordsParser {
 
-    private DecimalFormatSymbols formatSymbols;
-
-    public Numbers2WordsParser() {
-        this.formatSymbols = new DecimalFormatSymbols();
-        this.formatSymbols.setGroupingSeparator(',');
-        this.formatSymbols.setDecimalSeparator('.');
-    }
-
     public void parse(Number number) {
-        ThousandBlockNumber numberParts = partitionNumberIntoParts(number);
+        ThousandBlockNumber numberParts = partitionIntoBlocks(number);
         System.out.println(numberParts);
     }
 
-    private ThousandBlockNumber partitionNumberIntoParts(Number source) {
+    private ThousandBlockNumber partitionIntoBlocks(Number source) {
         if (source == null) {
-            return null;
-        }
-
-        BigDecimal wholePart;
-        BigDecimal fractionPart;
-        if (source instanceof Integer || source instanceof Short || source instanceof Long) {
-            wholePart = new BigDecimal(source.longValue());
-            fractionPart = null;
+            return new ThousandBlockNumber();
+        } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
+            BigDecimal wholePart = new BigDecimal(source.longValue());
+            return new ThousandBlockNumber(wholePart.signum(), extractBlocks(wholePart), Collections.emptyList());
         } else {
-            wholePart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
-            fractionPart = wholePart.abs().remainder(BigDecimal.ONE);
+            BigDecimal wholePart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
+            BigDecimal fractionPart = wholePart.abs().remainder(BigDecimal.ONE);
             wholePart = wholePart.subtract(fractionPart);
             fractionPart = fractionPart.movePointRight(wholePart.scale());
+            return new ThousandBlockNumber(wholePart.signum(), extractBlocks(wholePart), extractBlocks(fractionPart));
         }
-        return new ThousandBlockNumber(wholePart.signum(), extractBlocks(wholePart), extractBlocks(fractionPart));
     }
 
     private List<BigDecimal> extractBlocks(BigDecimal number) {
