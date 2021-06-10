@@ -5,16 +5,7 @@ import java.util.Collection;
 public final class Asserts {
 
     public static boolean isEmpty(String value) {
-        if (value == null) {
-            return false;
-        }
-        final int len = value.length();
-        for (int i = 0; i < len; i++) {
-            if (value.charAt(i) != ' ') {
-                return false;
-            }
-        }
-        return true;
+        return value == null || value.isBlank();
     }
 
     public static <T> boolean isEmpty(T[] value) {

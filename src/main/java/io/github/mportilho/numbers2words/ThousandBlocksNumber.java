@@ -1,14 +1,13 @@
 package io.github.mportilho.numbers2words;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 public class ThousandBlocksNumber {
 
     private final int signal;
-    private final List<Long> wholeNumberBlocks;
-    private final List<Long> fractionalNumberBlocks;
+    private final List<Integer> wholeNumberBlocks;
+    private final List<Integer> fractionalNumberBlocks;
 
     public ThousandBlocksNumber() {
         this.signal = 1;
@@ -16,7 +15,7 @@ public class ThousandBlocksNumber {
         this.fractionalNumberBlocks = Collections.emptyList();
     }
 
-    public ThousandBlocksNumber(int signal, List<Long> wholeNumberBlocks, List<Long> fractionalNumberBlocks) {
+    public ThousandBlocksNumber(int signal, List<Integer> wholeNumberBlocks, List<Integer> fractionalNumberBlocks) {
         this.signal = signal;
         this.wholeNumberBlocks = wholeNumberBlocks;
         this.fractionalNumberBlocks = fractionalNumberBlocks;
@@ -26,11 +25,11 @@ public class ThousandBlocksNumber {
         return signal;
     }
 
-    public List<Long> getWholeNumberBlocks() {
+    public List<Integer> getWholeNumberBlocks() {
         return wholeNumberBlocks;
     }
 
-    public List<Long> getFractionalNumberBlocks() {
+    public List<Integer> getFractionalNumberBlocks() {
         return fractionalNumberBlocks;
     }
 

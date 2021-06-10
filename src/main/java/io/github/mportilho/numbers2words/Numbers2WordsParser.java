@@ -1,23 +1,21 @@
 package io.github.mportilho.numbers2words;
 
+import io.github.mportilho.assertions.Asserts;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 public class Numbers2WordsParser {
 
-    private Numbers2WordsOptions wordOptions;
-    private Properties properties;
+    public static final String CLASS_NUMBER = "number";
+    public static final String CLASS_SCALE = "scale";
 
-    public Numbers2WordsParser() {
-        this.properties = new Properties();
-    }
+    private Numbers2WordsOptions wordOptions;
 
     public Numbers2WordsParser(Numbers2WordsOptions wordOptions) {
         this.wordOptions = wordOptions;
-        this.properties = new Properties();
     }
 
     public void parse(Number number) {
@@ -26,43 +24,126 @@ public class Numbers2WordsParser {
         System.out.println(numberBlocks);
     }
 
-    private void formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
+    private String formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
-        formatNumberBlocks(builder, numberBlocks.getSignal(), "whole", numberBlocks.getWholeNumberBlocks());
-        formatNumberBlocks(builder, numberBlocks.getSignal(), "fractional", numberBlocks.getWholeNumberBlocks());
-    }
 
-    private void formatNumberBlocks(StringBuilder builder, int signal, String partName, List<Long> blocks) {
-//        whole.unitary.1.feminine.singular=uma
-//        whole.mil.3.singular=mil
-//        whole.unitary.1=um
-//        fraction.mil.1.singular=décimo
-//        whole.unitary.200+=duzentos
-        int blockQuantity = blocks.size();
-        for (int i = 0; i < blockQuantity; i++) {
-            long number = blocks.get(i);
-            long hundredPart = (number / 100) * 100;
-            long tenthPart = (number / 10) * 10;
-            long unitPart = number - hundredPart - tenthPart;
-            String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
+        StringBuilder wholeNumberBuilder = formatNumberBlocks("whole", numberBlocks.getWholeNumberBlocks());
+        StringBuilder fractionalNumberBuilder = formatNumberBlocks("whole", numberBlocks.getFractionalNumberBlocks());
 
-            StringBuilder key = new StringBuilder(partName).append('.').append("unitary");
-            properties.getProperty(key.toString());
+        builder.append(wholeNumberBuilder);
+        builder.append(" reais ");
+        builder.append(" <> ");
+
+        if (fractionalNumberBuilder.length() > 0) {
+            builder.append(fractionalNumberBuilder);
+            builder.append(" centavos ");
+            int fractionBlockSize = numberBlocks.getFractionalNumberBlocks().size();
+            int pos = 0;
+            if (fractionBlockSize > 0) {
+                int number = numberBlocks.getFractionalNumberBlocks().get(fractionBlockSize - 1);
+                int hundredPart = (number / 100) * 100;
+                int tenthPart = ((number - hundredPart) / 10) * 10;
+                int unitPart = number - hundredPart - tenthPart;
+                pos += (hundredPart > 0 ? 1 : 0) + (tenthPart > 0 ? 1 : 0) + (unitPart > 0 ? 1 : 0);
+            }
+            if (fractionBlockSize > 1) {
+                pos += (fractionBlockSize - 1) * 3;
+            }
+            builder.append(searchScaleWord("fraction", pos, false));
         }
+        return builder.toString();
     }
 
-    private String findPropertyValue(String partName, String numberClassName, long number, Character searchModifier, String wordGender) {
+    private StringBuilder formatNumberBlocks(String partName, List<Integer> blocks) {
+        int blockQuantity = blocks.size();
+        StringBuilder wordBuilder = new StringBuilder();
+
+        for (int i = 0; i < blockQuantity; i++) {
+            if (wordBuilder.length() > 0) {
+                wordBuilder.append(" e ");
+            }
+            wordBuilder.append(composeTextualReference(blocks.get(i), partName));
+            int scale = (blockQuantity - 1 - i) * 3;
+            String scaleWord = searchScaleWord(partName, scale, false);
+            if (scale > 0 && scaleWord == null) {
+                throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", scale));
+            } else if (scaleWord != null) {
+                wordBuilder.append(' ').append(scaleWord);
+            }
+        }
+        return wordBuilder;
+    }
+
+    private String searchScaleWord(String partName, int scale, boolean modifierFirst) {
+        if (scale < 0) {
+            return null;
+        }
+        String value = findPropertyValue(partName, CLASS_SCALE, scale, modifierFirst ? "+" : "");
+        if (value != null) {
+            return value;
+        }
+        return findPropertyValue(partName, CLASS_SCALE, scale, !modifierFirst ? "+" : "");
+    }
+
+    private StringBuilder composeTextualReference(int number, String partName) {
+        StringBuilder wordBuilder = new StringBuilder();
+        int hundredPart = (number / 100) * 100;
+        int tenthPart = ((number - hundredPart) / 10) * 10;
+        int unitPart = number - hundredPart - tenthPart;
+
+        String word = searchWord(partName, CLASS_NUMBER, number, false);
+        if (word != null) {
+            wordBuilder.append(word);
+        } else {
+            if (hundredPart != 0) {
+                String temp = searchWord(partName, CLASS_NUMBER, hundredPart, true);
+                checkExistence(temp, hundredPart, number);
+                wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? " e " : "");
+            }
+            if (tenthPart != 0 && unitPart != 0) {
+                String temp = searchWord(partName, CLASS_NUMBER, tenthPart + unitPart, true);
+                if (temp != null) {
+                    wordBuilder.append(temp);
+                } else {
+                    temp = searchWord(partName, CLASS_NUMBER, tenthPart, true);
+                    checkExistence(temp, tenthPart, number);
+                    wordBuilder.append(temp).append(" e ");
+                    temp = searchWord(partName, CLASS_NUMBER, unitPart, true);
+                    checkExistence(temp, tenthPart, number);
+                    wordBuilder.append(temp);
+                }
+            }
+            if (tenthPart == 0 && unitPart != 0) {
+                String temp = searchWord(partName, CLASS_NUMBER, unitPart, true);
+                checkExistence(temp, tenthPart, number);
+                wordBuilder.append(temp);
+            }
+        }
+        return wordBuilder;
+    }
+
+    private String searchWord(String partName, String numberClass, int number, boolean modifierFirst) {
+        String value = findPropertyValue(partName, numberClass, number, modifierFirst ? "+" : "");
+        if (value != null) {
+            return value;
+        }
+        return findPropertyValue(partName, numberClass, number, !modifierFirst ? "+" : "");
+    }
+
+    private String findPropertyValue(String partName, String numberClassName, int number, String searchModifier) {
         String numberType = number == 1l ? "singular" : "plural";
+        String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
         String value;
 
-        value = properties.getProperty(new StringBuilder(partName).append('.').append(numberClassName).append('.')
-                .append(number).append(searchModifier).append('.').append(wordGender).append('.').append(numberType).toString());
+        value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName)
+                .append('.').append(number).append(searchModifier).append('.').append(wordGender).append('.')
+                .append(numberType).toString());
         if (value == null || value.isBlank()) {
-            value = properties.getProperty(new StringBuilder(partName).append('.').append(numberClassName).append('.')
-                    .append(number).append(searchModifier).append('.').append(numberType).toString());
+            value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName)
+                    .append('.').append(number).append(searchModifier).append('.').append(numberType).toString());
         }
         if (value == null || value.isBlank()) {
-            value = properties.getProperty(new StringBuilder(partName).append('.').append(numberClassName).append('.')
+            value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName).append('.')
                     .append(number).append(searchModifier).toString());
         }
         return value;
@@ -73,7 +154,7 @@ public class Numbers2WordsParser {
         if (source == null) {
             return new ThousandBlocksNumber();
         } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
-            BigDecimal wholePart = new BigDecimal(source.longValue());
+            BigDecimal wholePart = new BigDecimal(source.intValue());
             return new ThousandBlocksNumber(wholePart.signum(), extractBlocks(wholePart), Collections.emptyList());
         } else {
             BigDecimal wholePart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
@@ -84,23 +165,29 @@ public class Numbers2WordsParser {
         }
     }
 
-    private List<Long> extractBlocks(BigDecimal number) {
+    private List<Integer> extractBlocks(BigDecimal number) {
         if (number == null) {
             return Collections.emptyList();
         }
         if (number.compareTo(BigDecimal.ZERO) == 0) {
-            return Collections.singletonList(0l);
+            return Collections.singletonList(0);
         }
         number = number.abs().stripTrailingZeros();
-        List<Long> blocks = new ArrayList<>();
+        List<Integer> blocks = new ArrayList<>();
         while (number.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal block = number.divide(new BigDecimal(1000));
             BigDecimal fraction = block.remainder(BigDecimal.ONE);
-            blocks.add(fraction.movePointRight(block.scale()).abs().longValue());
+            blocks.add(fraction.movePointRight(block.scale()).abs().intValue());
             number = block.subtract(fraction);
         }
         Collections.reverse(blocks);
         return blocks;
+    }
+
+    private void checkExistence(String value, int number, int part) {
+        if (Asserts.isEmpty(value)) {
+            throw new IllegalStateException(String.format("No word mapped for %s from number %d", part, number));
+        }
     }
 
 }
