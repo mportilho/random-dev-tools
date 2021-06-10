@@ -28,7 +28,7 @@ public class TestConversions {
                     .filter(Asserts::isNotEmpty).map(s -> s.split("=")).collect(Collectors.toMap(s -> s[0], s -> s[1]));
             properties.putAll(stringMap);
         }
-        Numbers2WordsOptions options = new Numbers2WordsOptions(Numbers2WordsOptions.WordGender.MASCULINE, properties);
+        Numbers2WordsOptions options = new Numbers2WordsOptions(WordGender.MASCULINE, properties);
         Numbers2WordsParser parser = new Numbers2WordsParser(options);
         parser.parse(new BigDecimal("99912345.89812345"));
     }

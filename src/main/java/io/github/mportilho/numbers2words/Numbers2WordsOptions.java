@@ -4,21 +4,6 @@ import java.util.Properties;
 
 public class Numbers2WordsOptions {
 
-    public enum WordGender {
-        MASCULINE("masculine"), FEMININE("feminine");
-
-        private String label;
-
-        WordGender(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return this.label;
-        }
-
-    }
-
     private final WordGender gender;
     private final Properties properties;
 

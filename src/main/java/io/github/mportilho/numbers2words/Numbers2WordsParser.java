@@ -9,8 +9,8 @@ import java.util.List;
 
 public class Numbers2WordsParser {
 
-    public static final String CLASS_NUMBER = "number";
-    public static final String CLASS_SCALE = "scale";
+    private static final String CLASS_NUMBER = "number";
+    private static final String CLASS_SCALE = "scale";
 
     private Numbers2WordsOptions wordOptions;
 
@@ -31,10 +31,11 @@ public class Numbers2WordsParser {
         StringBuilder fractionalNumberBuilder = formatNumberBlocks("whole", numberBlocks.getFractionalNumberBlocks());
 
         builder.append(wholeNumberBuilder);
+//        if (wordOptions.getProperties().getProperty(""))
         builder.append(" reais ");
-        builder.append(" <> ");
 
         if (fractionalNumberBuilder.length() > 0) {
+            builder.append(getDecimalSeparator());
             builder.append(fractionalNumberBuilder);
             builder.append(" centavos ");
             int fractionBlockSize = numberBlocks.getFractionalNumberBlocks().size();
@@ -183,6 +184,31 @@ public class Numbers2WordsParser {
         Collections.reverse(blocks);
         return blocks;
     }
+    
+    private String getThousandsSeparator() {
+        String property = wordOptions.getProperties().getProperty("thousands_separator");
+        if (property == null) {
+            throw new IllegalStateException("No thousands separator configuration provided");
+        }
+        return property;
+    }
+
+    private String getDecimalSeparator() {
+        String property = wordOptions.getProperties().getProperty("decimal_separator");
+        if (property == null) {
+            throw new IllegalStateException("No thousands separator configuration provided");
+        }
+        return property;
+    }
+
+    private String getNumberSeparator() {
+        String property = wordOptions.getProperties().getProperty("number_separator");
+        if (property == null) {
+            throw new IllegalStateException("No thousands separator configuration provided");
+        }
+        return property;
+    }
+
 
     private void checkExistence(String value, int number, int part) {
         if (Asserts.isEmpty(value)) {
