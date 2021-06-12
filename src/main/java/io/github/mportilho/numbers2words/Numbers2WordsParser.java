@@ -9,9 +9,6 @@ import java.util.List;
 
 public class Numbers2WordsParser {
 
-    private static final String CLASS_NUMBER = "number";
-    private static final String CLASS_SCALE = "scale";
-
     private final Numbers2WordsOptions wordOptions;
 
     public Numbers2WordsParser(Numbers2WordsOptions wordOptions) {
@@ -25,8 +22,8 @@ public class Numbers2WordsParser {
 
     private String formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
-        StringBuilder wholeNumberBuilder = formatNumberBlocks(numberBlocks.getWholeNumberBlocks(), 0);
-        StringBuilder fractionalNumberBuilder = formatNumberBlocks(numberBlocks.getFractionalNumberBlocks(), numberBlocks.getScale());
+        StringBuilder wholeNumberBuilder = formatNumberBlocks(numberBlocks.getWholeNumberBlocks());
+        StringBuilder fractionalNumberBuilder = formatNumberBlocks(numberBlocks.getFractionalNumberBlocks());
 
         if (wholeNumberBuilder != null) {
             builder.append(wholeNumberBuilder);
@@ -36,11 +33,13 @@ public class Numbers2WordsParser {
             appendIfExists(builder, getDecimalSeparator());
             builder.append(fractionalNumberBuilder);
             appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()));
+            appendIfExists(builder, numberBlocks.getScale() >= 0 ?
+                    searchSuffixWord("fraction.scale", numberBlocks.getScale()) : null);
         }
         return builder.toString();
     }
 
-    private StringBuilder formatNumberBlocks(List<Integer> blocks, int fractionScale) {
+    private StringBuilder formatNumberBlocks(List<Integer> blocks) {
         int blockQuantity = blocks.size();
         StringBuilder wordBuilder = new StringBuilder();
 
@@ -48,56 +47,50 @@ public class Numbers2WordsParser {
             if (wordBuilder.length() > 0) {
                 wordBuilder.append(getThousandsSeparator());
             }
-            wordBuilder.append(composeTextualReference(blocks.get(i), "integer"));
+            
+            wordBuilder.append(composeTextualReference(blocks.get(i)));
+            
             int scale = (blockQuantity - 1 - i) * 3;
-            String scaleWord = searchScaleWord("integer", scale);
+            String scaleWord = scale >= 0 ? searchSuffixWord("integer.scale", scale) : null;
             if (scale > 0 && scaleWord == null) {
                 throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", scale));
             } else if (scaleWord != null) {
                 wordBuilder.append(' ').append(scaleWord);
             }
         }
-        appendIfExists(wordBuilder, searchScaleWord("fraction", fractionScale));
         return wordBuilder.length() > 0 ? wordBuilder : null;
     }
 
-    private String searchScaleWord(String partName, int scale) {
-        if (scale < 0) {
-            return null;
-        }
-        return findPropertyValue(partName, CLASS_SCALE, scale, "");
-    }
-
-    private StringBuilder composeTextualReference(int number, String partName) {
+    private StringBuilder composeTextualReference(int number) {
         StringBuilder wordBuilder = new StringBuilder();
         int hundredPart = (number / 100) * 100;
         int tenthPart = ((number - hundredPart) / 10) * 10;
         int unitPart = number - hundredPart - tenthPart;
 
-        String word = searchWord(partName, CLASS_NUMBER, number, false);
+        String word = searchNumberRepresentation(number, false);
         if (word != null) {
             wordBuilder.append(word);
         } else {
             if (hundredPart != 0) {
-                String temp = searchWord(partName, CLASS_NUMBER, hundredPart, true);
+                String temp = searchNumberRepresentation(hundredPart, true);
                 checkExistence(temp, hundredPart, number);
                 wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? getNumberSeparator() : "");
             }
             if (tenthPart != 0 && unitPart != 0) {
-                String temp = searchWord(partName, CLASS_NUMBER, tenthPart + unitPart, true);
+                String temp = searchNumberRepresentation(tenthPart + unitPart, true);
                 if (temp != null) {
                     wordBuilder.append(temp);
                 } else {
-                    temp = searchWord(partName, CLASS_NUMBER, tenthPart, true);
+                    temp = searchNumberRepresentation(tenthPart, true);
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp).append(getNumberSeparator());
-                    temp = searchWord(partName, CLASS_NUMBER, unitPart, true);
+                    temp = searchNumberRepresentation(unitPart, true);
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp);
                 }
             }
             if (tenthPart == 0 && unitPart != 0) {
-                String temp = searchWord(partName, CLASS_NUMBER, unitPart, true);
+                String temp = searchNumberRepresentation(unitPart, true);
                 checkExistence(temp, tenthPart, number);
                 wordBuilder.append(temp);
             }
@@ -105,14 +98,14 @@ public class Numbers2WordsParser {
         return wordBuilder;
     }
 
-    protected String searchWord(String partName, String numberClassName, int number, boolean modifierFirst) {
+    protected String searchNumberRepresentation(int number, boolean modifierFirst) {
         String numberType = number == 1 ? "singular" : "plural";
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
-        String value = findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
-                .append('.').append(number).append(modifierFirst ? "+" : "").toString(), wordGender, numberType);
+        String searchPhrase = new StringBuilder("integer.number.").append(number).append(modifierFirst ? "+" : "").toString();
+        String value = findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
         if (value == null) {
-            return findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
-                    .append('.').append(number).append(!modifierFirst ? "+" : "").toString(), wordGender, numberType);
+            searchPhrase = new StringBuilder("integer.number.").append(number).append(!modifierFirst ? "+" : "").toString();
+            return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
         }
         return value;
     }
@@ -121,13 +114,6 @@ public class Numbers2WordsParser {
         String numberType = number == 1 ? "singular" : "plural";
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
         return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
-    }
-
-    private String findPropertyValue(String partName, String numberClassName, int number, String searchModifier) {
-        String numberType = number == 1 ? "singular" : "plural";
-        String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
-        return findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
-                .append('.').append(number).append(searchModifier).toString(), wordGender, numberType);
     }
 
     private String findPropertyValueWithClassifier(String searchPhrase, String wordGender, String numberType) {
@@ -148,7 +134,6 @@ public class Numbers2WordsParser {
         }
         return value;
     }
-
 
     private ThousandBlocksNumber partitionIntoBlocks(Number source) {
         if (source == null) {

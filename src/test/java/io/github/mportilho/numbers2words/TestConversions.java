@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
@@ -54,27 +53,27 @@ public class TestConversions {
 
         options = new Numbers2WordsOptions(WordGender.FEMININE, properties);
         parser = new Numbers2WordsParser(options);
-        Assertions.assertThat(parser.searchWord("integer", "number", 1, false)).isEqualTo("2");
-        Assertions.assertThat(parser.searchWord("integer", "number", 2, false)).isEqualTo("3");
-        Assertions.assertThat(parser.searchWord("integer", "number", 3, false)).isEqualTo("8");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, true)).isEqualTo("11");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, false)).isEqualTo("12");
+        Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("2");
+        Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("3");
+        Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("8");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
         options = new Numbers2WordsOptions(WordGender.MASCULINE, properties);
         parser = new Numbers2WordsParser(options);
-        Assertions.assertThat(parser.searchWord("integer", "number", 1, false)).isEqualTo("4");
-        Assertions.assertThat(parser.searchWord("integer", "number", 2, false)).isEqualTo("5");
-        Assertions.assertThat(parser.searchWord("integer", "number", 3, false)).isEqualTo("9");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, true)).isEqualTo("11");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, false)).isEqualTo("12");
+        Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("4");
+        Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("5");
+        Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("9");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
         options = new Numbers2WordsOptions(null, properties);
         parser = new Numbers2WordsParser(options);
-        Assertions.assertThat(parser.searchWord("integer", "number", 1, false)).isEqualTo("6");
-        Assertions.assertThat(parser.searchWord("integer", "number", 2, false)).isEqualTo("7");
-        Assertions.assertThat(parser.searchWord("integer", "number", 3, false)).isEqualTo("10");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, true)).isEqualTo("11");
-        Assertions.assertThat(parser.searchWord("integer", "number", 4, false)).isEqualTo("12");
+        Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("6");
+        Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("7");
+        Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("10");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
+        Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
     }
 
     @Test

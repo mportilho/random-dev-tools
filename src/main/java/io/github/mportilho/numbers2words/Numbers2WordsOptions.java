@@ -4,6 +4,12 @@ import java.util.Properties;
 
 public class Numbers2WordsOptions {
 
+    private boolean showDecimalUnit;
+    private boolean showZeroInteger;
+    private boolean appendSingularUnitToZero;
+    private boolean showIntegerUnitWhenNoDecimalFound;
+    private boolean identifyOmittedIntegerUnitWhenNoIntegerFound;
+    
     private final WordGender gender;
     private final Properties properties;
 
