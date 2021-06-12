@@ -12,78 +12,60 @@ public class Numbers2WordsParser {
     private static final String CLASS_NUMBER = "number";
     private static final String CLASS_SCALE = "scale";
 
-    private Numbers2WordsOptions wordOptions;
+    private final Numbers2WordsOptions wordOptions;
 
     public Numbers2WordsParser(Numbers2WordsOptions wordOptions) {
         this.wordOptions = wordOptions;
     }
 
-    public void parse(Number number) {
+    public String parse(Number number) {
         ThousandBlocksNumber numberBlocks = partitionIntoBlocks(number);
-        formatThousandBlocksNumber(numberBlocks);
-        System.out.println(numberBlocks);
+        return formatThousandBlocksNumber(numberBlocks);
     }
 
     private String formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
+        StringBuilder wholeNumberBuilder = formatNumberBlocks(numberBlocks.getWholeNumberBlocks(), 0);
+        StringBuilder fractionalNumberBuilder = formatNumberBlocks(numberBlocks.getFractionalNumberBlocks(), numberBlocks.getScale());
 
-        StringBuilder wholeNumberBuilder = formatNumberBlocks("whole", numberBlocks.getWholeNumberBlocks());
-        StringBuilder fractionalNumberBuilder = formatNumberBlocks("whole", numberBlocks.getFractionalNumberBlocks());
-
-        builder.append(wholeNumberBuilder);
-//        if (wordOptions.getProperties().getProperty(""))
-        builder.append(" reais ");
-
-        if (fractionalNumberBuilder.length() > 0) {
-            builder.append(getDecimalSeparator());
+        if (wholeNumberBuilder != null) {
+            builder.append(wholeNumberBuilder);
+            appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()));
+        }
+        if (fractionalNumberBuilder != null) {
+            appendIfExists(builder, getDecimalSeparator());
             builder.append(fractionalNumberBuilder);
-            builder.append(" centavos ");
-            int fractionBlockSize = numberBlocks.getFractionalNumberBlocks().size();
-            int pos = 0;
-            if (fractionBlockSize > 0) {
-                int number = numberBlocks.getFractionalNumberBlocks().get(fractionBlockSize - 1);
-                int hundredPart = (number / 100) * 100;
-                int tenthPart = ((number - hundredPart) / 10) * 10;
-                int unitPart = number - hundredPart - tenthPart;
-                pos += (hundredPart > 0 ? 1 : 0) + (tenthPart > 0 ? 1 : 0) + (unitPart > 0 ? 1 : 0);
-            }
-            if (fractionBlockSize > 1) {
-                pos += (fractionBlockSize - 1) * 3;
-            }
-            builder.append(searchScaleWord("fraction", pos, false));
+            appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()));
         }
         return builder.toString();
     }
 
-    private StringBuilder formatNumberBlocks(String partName, List<Integer> blocks) {
+    private StringBuilder formatNumberBlocks(List<Integer> blocks, int fractionScale) {
         int blockQuantity = blocks.size();
         StringBuilder wordBuilder = new StringBuilder();
 
         for (int i = 0; i < blockQuantity; i++) {
             if (wordBuilder.length() > 0) {
-                wordBuilder.append(" e ");
+                wordBuilder.append(getThousandsSeparator());
             }
-            wordBuilder.append(composeTextualReference(blocks.get(i), partName));
+            wordBuilder.append(composeTextualReference(blocks.get(i), "integer"));
             int scale = (blockQuantity - 1 - i) * 3;
-            String scaleWord = searchScaleWord(partName, scale, false);
+            String scaleWord = searchScaleWord("integer", scale);
             if (scale > 0 && scaleWord == null) {
                 throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", scale));
             } else if (scaleWord != null) {
                 wordBuilder.append(' ').append(scaleWord);
             }
         }
-        return wordBuilder;
+        appendIfExists(wordBuilder, searchScaleWord("fraction", fractionScale));
+        return wordBuilder.length() > 0 ? wordBuilder : null;
     }
 
-    private String searchScaleWord(String partName, int scale, boolean modifierFirst) {
+    private String searchScaleWord(String partName, int scale) {
         if (scale < 0) {
             return null;
         }
-        String value = findPropertyValue(partName, CLASS_SCALE, scale, modifierFirst ? "+" : "");
-        if (value != null) {
-            return value;
-        }
-        return findPropertyValue(partName, CLASS_SCALE, scale, !modifierFirst ? "+" : "");
+        return findPropertyValue(partName, CLASS_SCALE, scale, "");
     }
 
     private StringBuilder composeTextualReference(int number, String partName) {
@@ -99,7 +81,7 @@ public class Numbers2WordsParser {
             if (hundredPart != 0) {
                 String temp = searchWord(partName, CLASS_NUMBER, hundredPart, true);
                 checkExistence(temp, hundredPart, number);
-                wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? " e " : "");
+                wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? getNumberSeparator() : "");
             }
             if (tenthPart != 0 && unitPart != 0) {
                 String temp = searchWord(partName, CLASS_NUMBER, tenthPart + unitPart, true);
@@ -108,7 +90,7 @@ public class Numbers2WordsParser {
                 } else {
                     temp = searchWord(partName, CLASS_NUMBER, tenthPart, true);
                     checkExistence(temp, tenthPart, number);
-                    wordBuilder.append(temp).append(" e ");
+                    wordBuilder.append(temp).append(getNumberSeparator());
                     temp = searchWord(partName, CLASS_NUMBER, unitPart, true);
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp);
@@ -123,29 +105,46 @@ public class Numbers2WordsParser {
         return wordBuilder;
     }
 
-    private String searchWord(String partName, String numberClass, int number, boolean modifierFirst) {
-        String value = findPropertyValue(partName, numberClass, number, modifierFirst ? "+" : "");
-        if (value != null) {
-            return value;
+    protected String searchWord(String partName, String numberClassName, int number, boolean modifierFirst) {
+        String numberType = number == 1 ? "singular" : "plural";
+        String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
+        String value = findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
+                .append('.').append(number).append(modifierFirst ? "+" : "").toString(), wordGender, numberType);
+        if (value == null) {
+            return findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
+                    .append('.').append(number).append(!modifierFirst ? "+" : "").toString(), wordGender, numberType);
         }
-        return findPropertyValue(partName, numberClass, number, !modifierFirst ? "+" : "");
+        return value;
+    }
+
+    protected String searchSuffixWord(String searchPhrase, int number) {
+        String numberType = number == 1 ? "singular" : "plural";
+        String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
+        return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
     }
 
     private String findPropertyValue(String partName, String numberClassName, int number, String searchModifier) {
-        String numberType = number == 1l ? "singular" : "plural";
+        String numberType = number == 1 ? "singular" : "plural";
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
-        String value;
+        return findPropertyValueWithClassifier(new StringBuilder(partName).append('.').append(numberClassName)
+                .append('.').append(number).append(searchModifier).toString(), wordGender, numberType);
+    }
 
-        value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName)
-                .append('.').append(number).append(searchModifier).append('.').append(wordGender).append('.')
-                .append(numberType).toString());
-        if (value == null || value.isBlank()) {
-            value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName)
-                    .append('.').append(number).append(searchModifier).append('.').append(numberType).toString());
+    private String findPropertyValueWithClassifier(String searchPhrase, String wordGender, String numberType) {
+        String value = null;
+        if (wordGender != null && !wordGender.isBlank()) {
+            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(wordGender)
+                    .append('.').append(numberType).toString());
+            if (value == null || value.isBlank()) {
+                value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(wordGender)
+                        .toString());
+            }
         }
         if (value == null || value.isBlank()) {
-            value = wordOptions.getProperties().getProperty(new StringBuilder(partName).append('.').append(numberClassName).append('.')
-                    .append(number).append(searchModifier).toString());
+            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(numberType).toString());
+        }
+        if (value == null || value.isBlank()) {
+            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).toString());
         }
         return value;
     }
@@ -155,14 +154,14 @@ public class Numbers2WordsParser {
         if (source == null) {
             return new ThousandBlocksNumber();
         } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
-            BigDecimal wholePart = new BigDecimal(source.intValue());
-            return new ThousandBlocksNumber(wholePart.signum(), extractBlocks(wholePart), Collections.emptyList());
+            BigDecimal integerPart = new BigDecimal(source.intValue());
+            return new ThousandBlocksNumber(integerPart, BigDecimal.ZERO, 0, extractBlocks(integerPart), Collections.emptyList());
         } else {
-            BigDecimal wholePart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
-            BigDecimal fractionPart = wholePart.abs().remainder(BigDecimal.ONE);
-            wholePart = wholePart.subtract(fractionPart);
-            fractionPart = fractionPart.movePointRight(wholePart.scale());
-            return new ThousandBlocksNumber(wholePart.signum(), extractBlocks(wholePart), extractBlocks(fractionPart));
+            BigDecimal integerPart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
+            BigDecimal fractionPart = integerPart.abs().remainder(BigDecimal.ONE);
+            integerPart = integerPart.subtract(fractionPart);
+            fractionPart = fractionPart.movePointRight(integerPart.scale());
+            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), extractBlocks(fractionPart));
         }
     }
 
@@ -184,7 +183,7 @@ public class Numbers2WordsParser {
         Collections.reverse(blocks);
         return blocks;
     }
-    
+
     private String getThousandsSeparator() {
         String property = wordOptions.getProperties().getProperty("thousands_separator");
         if (property == null) {
@@ -213,6 +212,12 @@ public class Numbers2WordsParser {
     private void checkExistence(String value, int number, int part) {
         if (Asserts.isEmpty(value)) {
             throw new IllegalStateException(String.format("No word mapped for %s from number %d", part, number));
+        }
+    }
+
+    private void appendIfExists(StringBuilder builder, CharSequence value) {
+        if (value != null && value.length() > 0) {
+            builder.append(' ').append(value);
         }
     }
 
