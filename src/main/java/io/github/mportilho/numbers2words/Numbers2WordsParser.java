@@ -9,6 +9,7 @@ import java.util.List;
 
 public class Numbers2WordsParser {
 
+    public static final BigDecimal A_THOUSAND = new BigDecimal(1000);
     private final Numbers2WordsOptions wordOptions;
 
     public Numbers2WordsParser(Numbers2WordsOptions wordOptions) {
@@ -20,21 +21,72 @@ public class Numbers2WordsParser {
         return formatThousandBlocksNumber(numberBlocks);
     }
 
+    private ThousandBlocksNumber partitionIntoBlocks(Number source) {
+        if (source == null) {
+            return new ThousandBlocksNumber();
+        } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
+            BigDecimal integerPart = new BigDecimal(source.intValue());
+            return new ThousandBlocksNumber(integerPart, BigDecimal.ZERO, 0, extractBlocks(integerPart), Collections.emptyList());
+        } else {
+            BigDecimal integerPart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
+            BigDecimal fractionPart = integerPart.abs().remainder(BigDecimal.ONE);
+            integerPart = integerPart.subtract(fractionPart);
+            fractionPart = fractionPart.movePointRight(integerPart.scale());
+            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), extractBlocks(fractionPart));
+        }
+    }
+
+    protected static List<Integer> extractBlocks(BigDecimal number) {
+        if (number == null) {
+            return Collections.emptyList();
+        }
+        if (number.compareTo(BigDecimal.ZERO) == 0) {
+            return Collections.singletonList(0);
+        }
+        number = number.abs().stripTrailingZeros();
+        List<Integer> blocks = new ArrayList<>();
+        while (number.compareTo(BigDecimal.ZERO) > 0) {
+            if (number.compareTo(A_THOUSAND) == 0) {
+                blocks.add(1);
+                blocks.add(0);
+                number = BigDecimal.ZERO;
+            } else if (number.compareTo(A_THOUSAND) < 0) {
+                blocks.add(number.intValue());
+                number = BigDecimal.ZERO;
+            } else {
+                BigDecimal temp = number.movePointLeft(3);
+                BigDecimal fraction = temp.remainder(BigDecimal.ONE);
+                number = temp.subtract(fraction);
+                blocks.add(fraction.movePointRight(3).intValue());
+            }
+        }
+        Collections.reverse(blocks);
+        return blocks;
+    }
+
     private String formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
-        StringBuilder wholeNumberBuilder = formatNumberBlocks(numberBlocks.getWholeNumberBlocks());
+        StringBuilder integerNumberBuilder = formatNumberBlocks(numberBlocks.getIntegerNumberBlocks());
         StringBuilder fractionalNumberBuilder = formatNumberBlocks(numberBlocks.getFractionalNumberBlocks());
 
-        if (wholeNumberBuilder != null) {
-            builder.append(wholeNumberBuilder);
-            appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()));
+        if (integerNumberBuilder != null &&
+                (!numberBlocks.isZeroInteger() || (numberBlocks.isZeroInteger() && wordOptions.isDisplayingZeroInteger()))) {
+            builder.append(integerNumberBuilder);
+            if (wordOptions.isDisplayingIntegerUnit() ||
+                    wordOptions.isDisplayingIntegerUnit() && numberBlocks.isZeroInteger() && wordOptions.isAppendingSingularUnitToZero()) {
+                appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()));
+            }
         }
         if (fractionalNumberBuilder != null) {
-            appendIfExists(builder, getDecimalSeparator());
+            appendIfExists(builder, wordOptions.getDecimalSeparator());
             builder.append(fractionalNumberBuilder);
-            appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()));
-            appendIfExists(builder, numberBlocks.getScale() >= 0 ?
-                    searchSuffixWord("fraction.scale", numberBlocks.getScale()) : null);
+            if (wordOptions.isDisplayingDecimalScale()) {
+                appendIfExists(builder, numberBlocks.getScale() >= 0 ?
+                        searchSuffixWord("fraction.scale", numberBlocks.getScale()) : null);
+            }
+            if (wordOptions.isDisplayingDecimalUnit()) {
+                appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()));
+            }
         }
         return builder.toString();
     }
@@ -45,17 +97,20 @@ public class Numbers2WordsParser {
 
         for (int i = 0; i < blockQuantity; i++) {
             if (wordBuilder.length() > 0) {
-                wordBuilder.append(getThousandsSeparator());
+                wordBuilder.append(wordOptions.getThousandsSeparator());
             }
-            
-            wordBuilder.append(composeTextualReference(blocks.get(i)));
-            
+            StringBuilder text = composeTextualReference(blocks.get(i));
+            wordBuilder.append(text);
+
             int scale = (blockQuantity - 1 - i) * 3;
-            String scaleWord = scale >= 0 ? searchSuffixWord("integer.scale", scale) : null;
+            String scaleWord = scale >= 0 ? searchSuffixWord("integer.scale." + scale, scale) : null;
             if (scale > 0 && scaleWord == null) {
                 throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", scale));
             } else if (scaleWord != null) {
-                wordBuilder.append(' ').append(scaleWord);
+                if (text.length() > 0) {
+                    wordBuilder.append(' ');
+                }
+                wordBuilder.append(scaleWord);
             }
         }
         return wordBuilder.length() > 0 ? wordBuilder : null;
@@ -69,12 +124,14 @@ public class Numbers2WordsParser {
 
         String word = searchNumberRepresentation(number, false);
         if (word != null) {
-            wordBuilder.append(word);
+            if (unitPart != 1 || wordOptions.isDisplayingSingularWord()) {
+                wordBuilder.append(word);
+            }
         } else {
             if (hundredPart != 0) {
                 String temp = searchNumberRepresentation(hundredPart, true);
                 checkExistence(temp, hundredPart, number);
-                wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? getNumberSeparator() : "");
+                wordBuilder.append(temp).append((tenthPart != 0 || unitPart != 0) ? wordOptions.getNumberSeparator() : "");
             }
             if (tenthPart != 0 && unitPart != 0) {
                 String temp = searchNumberRepresentation(tenthPart + unitPart, true);
@@ -83,37 +140,39 @@ public class Numbers2WordsParser {
                 } else {
                     temp = searchNumberRepresentation(tenthPart, true);
                     checkExistence(temp, tenthPart, number);
-                    wordBuilder.append(temp).append(getNumberSeparator());
+                    wordBuilder.append(temp).append(wordOptions.getNumberSeparator());
                     temp = searchNumberRepresentation(unitPart, true);
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp);
                 }
             }
             if (tenthPart == 0 && unitPart != 0) {
-                String temp = searchNumberRepresentation(unitPart, true);
-                checkExistence(temp, tenthPart, number);
-                wordBuilder.append(temp);
+                if (unitPart != 1 || wordOptions.isDisplayingSingularWord()) {
+                    String temp = searchNumberRepresentation(unitPart, true);
+                    checkExistence(temp, tenthPart, number);
+                    wordBuilder.append(temp);
+                }
             }
         }
         return wordBuilder;
     }
 
     protected String searchNumberRepresentation(int number, boolean modifierFirst) {
-        String numberType = number == 1 ? "singular" : "plural";
+        WordCountType numberType = number == 1 ? WordCountType.SINGULAR : WordCountType.PLURAL;
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
         String searchPhrase = new StringBuilder("integer.number.").append(number).append(modifierFirst ? "+" : "").toString();
-        String value = findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
+        String value = findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
         if (value == null) {
             searchPhrase = new StringBuilder("integer.number.").append(number).append(!modifierFirst ? "+" : "").toString();
-            return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
+            return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
         }
         return value;
     }
 
     protected String searchSuffixWord(String searchPhrase, int number) {
-        String numberType = number == 1 ? "singular" : "plural";
+        WordCountType numberType = number == 1 ? WordCountType.SINGULAR : WordCountType.PLURAL;
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
-        return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType);
+        return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
     }
 
     private String findPropertyValueWithClassifier(String searchPhrase, String wordGender, String numberType) {
@@ -134,65 +193,6 @@ public class Numbers2WordsParser {
         }
         return value;
     }
-
-    private ThousandBlocksNumber partitionIntoBlocks(Number source) {
-        if (source == null) {
-            return new ThousandBlocksNumber();
-        } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
-            BigDecimal integerPart = new BigDecimal(source.intValue());
-            return new ThousandBlocksNumber(integerPart, BigDecimal.ZERO, 0, extractBlocks(integerPart), Collections.emptyList());
-        } else {
-            BigDecimal integerPart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
-            BigDecimal fractionPart = integerPart.abs().remainder(BigDecimal.ONE);
-            integerPart = integerPart.subtract(fractionPart);
-            fractionPart = fractionPart.movePointRight(integerPart.scale());
-            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), extractBlocks(fractionPart));
-        }
-    }
-
-    private List<Integer> extractBlocks(BigDecimal number) {
-        if (number == null) {
-            return Collections.emptyList();
-        }
-        if (number.compareTo(BigDecimal.ZERO) == 0) {
-            return Collections.singletonList(0);
-        }
-        number = number.abs().stripTrailingZeros();
-        List<Integer> blocks = new ArrayList<>();
-        while (number.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal block = number.divide(new BigDecimal(1000));
-            BigDecimal fraction = block.remainder(BigDecimal.ONE);
-            blocks.add(fraction.movePointRight(block.scale()).abs().intValue());
-            number = block.subtract(fraction);
-        }
-        Collections.reverse(blocks);
-        return blocks;
-    }
-
-    private String getThousandsSeparator() {
-        String property = wordOptions.getProperties().getProperty("thousands_separator");
-        if (property == null) {
-            throw new IllegalStateException("No thousands separator configuration provided");
-        }
-        return property;
-    }
-
-    private String getDecimalSeparator() {
-        String property = wordOptions.getProperties().getProperty("decimal_separator");
-        if (property == null) {
-            throw new IllegalStateException("No thousands separator configuration provided");
-        }
-        return property;
-    }
-
-    private String getNumberSeparator() {
-        String property = wordOptions.getProperties().getProperty("number_separator");
-        if (property == null) {
-            throw new IllegalStateException("No thousands separator configuration provided");
-        }
-        return property;
-    }
-
 
     private void checkExistence(String value, int number, int part) {
         if (Asserts.isEmpty(value)) {

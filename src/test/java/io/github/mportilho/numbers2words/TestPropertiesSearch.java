@@ -1,37 +1,11 @@
 package io.github.mportilho.numbers2words;
 
-import io.github.mportilho.assertions.Asserts;
-import io.github.mportilho.resources.ResourceLoader;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
-public class TestConversions {
-
-    @Test
-    public void testConvert() throws Exception {
-        Properties properties = new Properties();
-        Optional<InputStream> classpathResource = ResourceLoader.fromClasspath("numbers2words_PT_BR.txt");
-        if (classpathResource.isEmpty()) {
-            throw new Exception();
-        }
-        try (InputStream resource = classpathResource.get()) {
-            Map<String, String> stringMap = new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8)).lines()
-                    .filter(Asserts::isNotEmpty).map(s -> s.split("=")).collect(Collectors.toMap(s -> s[0], s -> s[1]));
-            properties.putAll(stringMap);
-        }
-        Numbers2WordsOptions options = new Numbers2WordsOptions(WordGender.MASCULINE, properties);
-        Numbers2WordsParser parser = new Numbers2WordsParser(options);
-        System.out.println(parser.parse(54352231.009543459));
-    }
+public class TestPropertiesSearch {
 
     @Test
     public void testWordSearchFromNumbers() {
@@ -51,24 +25,21 @@ public class TestConversions {
         Numbers2WordsOptions options;
         Numbers2WordsParser parser;
 
-        options = new Numbers2WordsOptions(WordGender.FEMININE, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("2");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("3");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("8");
         Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
         Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
-        options = new Numbers2WordsOptions(WordGender.MASCULINE, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("4");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("5");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("9");
         Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
         Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
-        options = new Numbers2WordsOptions(null, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("6");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("7");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("10");
@@ -91,20 +62,17 @@ public class TestConversions {
         Numbers2WordsOptions options;
         Numbers2WordsParser parser;
 
-        options = new Numbers2WordsOptions(WordGender.FEMININE, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("1");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("2");
         Assertions.assertThat(parser.searchSuffixWord("integer-x2.suffix", 1)).isEqualTo("5");
 
-        options = new Numbers2WordsOptions(WordGender.MASCULINE, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("3");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("4");
         Assertions.assertThat(parser.searchSuffixWord("integer-x2.suffix", 2)).isEqualTo("6");
 
-        options = new Numbers2WordsOptions(null, properties);
-        parser = new Numbers2WordsParser(options);
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("7");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("8");
         Assertions.assertThat(parser.searchSuffixWord("fraction.suffix", 2)).isEqualTo("9");

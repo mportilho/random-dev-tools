@@ -10,9 +10,7 @@ public class ThousandBlocksNumber {
     private final BigDecimal integer;
     private final BigDecimal fraction;
     private final int scale;
-    private final boolean singularInteger;
-    private final boolean singularFraction;
-    private final List<Integer> wholeNumberBlocks;
+    private final List<Integer> integerNumberBlocks;
     private final List<Integer> fractionalNumberBlocks;
 
     public ThousandBlocksNumber() {
@@ -20,21 +18,17 @@ public class ThousandBlocksNumber {
         this.integer = null;
         this.fraction = null;
         this.scale = 0;
-        this.singularInteger = true;
-        this.singularFraction = true;
-        this.wholeNumberBlocks = Collections.emptyList();
+        this.integerNumberBlocks = Collections.emptyList();
         this.fractionalNumberBlocks = Collections.emptyList();
     }
 
     public ThousandBlocksNumber(BigDecimal integer, BigDecimal fraction, int scale,
-                                List<Integer> wholeNumberBlocks, List<Integer> fractionalNumberBlocks) {
+                                List<Integer> integerNumberBlocks, List<Integer> fractionalNumberBlocks) {
         this.signal = integer.signum();
         this.integer = integer;
         this.fraction = fraction;
         this.scale = scale;
-        this.singularInteger = integer.compareTo(BigDecimal.ONE) == 0;
-        this.singularFraction = fraction.compareTo(BigDecimal.ONE) == 0;
-        this.wholeNumberBlocks = wholeNumberBlocks;
+        this.integerNumberBlocks = integerNumberBlocks;
         this.fractionalNumberBlocks = fractionalNumberBlocks;
     }
 
@@ -42,20 +36,12 @@ public class ThousandBlocksNumber {
         return signal;
     }
 
-    public List<Integer> getWholeNumberBlocks() {
-        return wholeNumberBlocks;
+    public List<Integer> getIntegerNumberBlocks() {
+        return integerNumberBlocks;
     }
 
     public List<Integer> getFractionalNumberBlocks() {
         return fractionalNumberBlocks;
-    }
-
-    public boolean isSingularInteger() {
-        return singularInteger;
-    }
-
-    public boolean isSingularFraction() {
-        return singularFraction;
     }
 
     public BigDecimal getInteger() {
@@ -66,6 +52,10 @@ public class ThousandBlocksNumber {
         return fraction;
     }
 
+    public boolean isZeroInteger() {
+        return this.integer.compareTo(BigDecimal.ZERO) == 0;
+    }
+
     public int getScale() {
         return scale;
     }
@@ -74,7 +64,7 @@ public class ThousandBlocksNumber {
     public String toString() {
         return "ThousandBlocksNumber{" +
                 "signal=" + signal +
-                ", wholeNumberBlocks=" + wholeNumberBlocks +
+                ", wholeNumberBlocks=" + integerNumberBlocks +
                 ", fractionalNumberBlocks=" + fractionalNumberBlocks +
                 '}';
     }

@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 
-public class GenericDateTimeFormatters {
+public class DateTimeFormatters {
 
     public static final DateTimeFormatter MONTH_YEAR_FORMATTER;
     public static final DateTimeFormatter DATE_FORMATTER;
