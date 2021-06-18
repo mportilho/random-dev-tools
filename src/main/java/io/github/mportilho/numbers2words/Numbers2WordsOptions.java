@@ -1,6 +1,7 @@
 package io.github.mportilho.numbers2words;
 
 import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
+import io.github.mportilho.numbers2words.options.*;
 
 import java.util.Properties;
 
@@ -9,27 +10,24 @@ public class Numbers2WordsOptions {
     private final Properties properties;
     private final WordGender gender;
     private final ThousandSeparatorRule rule;
-    private final boolean displayingIntegerUnit;
-    private final boolean displayingDecimalUnit;
-    private final boolean displayingDecimalScale;
-    private final boolean displayingZeroInteger;
-    private final boolean displayZeroFraction;
-    private final boolean displayingSingularWord;
-    private final boolean appendingSingularUnitToZero;
 
-    protected Numbers2WordsOptions(Properties properties, WordGender gender, ThousandSeparatorRule rule, boolean displayingIntegerUnit,
-                                   boolean displayingDecimalUnit, boolean displayingDecimalScale, boolean displayingZeroInteger,
-                                   boolean displayZeroFraction, boolean displayingSingularWord, boolean appendingSingularUnitToZero) {
+    private final N2WUnitDisplay unitDisplay;
+    private final N2WScaleDisplay scaleDisplay;
+    private final N2WZeroDisplay zeroDisplay;
+    private final N2WSingularWordDisplay singularWordDisplay;
+    private final N2WAppendSingularUnitToZero appendSingularUnitToZero;
+
+    protected Numbers2WordsOptions(Properties properties, WordGender gender, ThousandSeparatorRule rule, N2WUnitDisplay unitDisplay,
+                                   N2WScaleDisplay scaleDisplay, N2WZeroDisplay zeroDisplay,
+                                   N2WSingularWordDisplay singularWordDisplay, N2WAppendSingularUnitToZero appendSingularUnitToZero) {
         this.properties = properties;
         this.gender = gender;
         this.rule = rule;
-        this.displayingIntegerUnit = displayingIntegerUnit;
-        this.displayingDecimalUnit = displayingDecimalUnit;
-        this.displayingDecimalScale = displayingDecimalScale;
-        this.displayingZeroInteger = displayingZeroInteger;
-        this.displayZeroFraction = displayZeroFraction;
-        this.displayingSingularWord = displayingSingularWord;
-        this.appendingSingularUnitToZero = appendingSingularUnitToZero;
+        this.unitDisplay = unitDisplay;
+        this.scaleDisplay = scaleDisplay;
+        this.zeroDisplay = zeroDisplay;
+        this.singularWordDisplay = singularWordDisplay;
+        this.appendSingularUnitToZero = appendSingularUnitToZero;
     }
 
     public WordGender getGender() {
@@ -44,32 +42,24 @@ public class Numbers2WordsOptions {
         return rule;
     }
 
-    public boolean isDisplayingIntegerUnit() {
-        return displayingIntegerUnit;
+    public N2WUnitDisplay getUnitDisplay() {
+        return unitDisplay;
     }
 
-    public boolean isDisplayingDecimalUnit() {
-        return displayingDecimalUnit;
+    public N2WScaleDisplay getScaleDisplay() {
+        return scaleDisplay;
     }
 
-    public boolean isDisplayingDecimalScale() {
-        return displayingDecimalScale;
+    public N2WZeroDisplay getZeroDisplay() {
+        return zeroDisplay;
     }
 
-    public boolean isDisplayingZeroInteger() {
-        return displayingZeroInteger;
+    public N2WSingularWordDisplay getSingularWordDisplay() {
+        return singularWordDisplay;
     }
 
-    public boolean isDisplayZeroFraction() {
-        return displayZeroFraction;
-    }
-
-    public boolean isAppendingSingularUnitToZero() {
-        return appendingSingularUnitToZero;
-    }
-
-    public boolean isDisplayingSingularWord() {
-        return displayingSingularWord;
+    public N2WAppendSingularUnitToZero getAppendSingularUnitToZero() {
+        return appendSingularUnitToZero;
     }
 
     public String getThousandsSeparator() {

@@ -3,6 +3,7 @@ package io.github.mportilho.numbers2words;
 import io.github.mportilho.assertions.Asserts;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,15 +26,16 @@ public class Numbers2WordsParser {
         if (source == null) {
             return new ThousandBlocksNumber();
         } else if (source instanceof Integer || source instanceof Short || source instanceof Long) {
-            BigDecimal integerPart = new BigDecimal(source.intValue());
+            BigDecimal integerPart = new BigDecimal(source.longValue());
             return new ThousandBlocksNumber(integerPart, BigDecimal.ZERO, 0, extractBlocks(integerPart), Collections.emptyList());
         } else {
-            BigDecimal integerPart = source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString());
+            BigDecimal originalNumber = (source instanceof BigDecimal ? ((BigDecimal) source) : new BigDecimal(source.toString())).stripTrailingZeros();
+            BigDecimal integerPart = originalNumber;
             BigDecimal fractionPart = integerPart.abs().remainder(BigDecimal.ONE);
             integerPart = integerPart.subtract(fractionPart);
             fractionPart = fractionPart.movePointRight(integerPart.scale());
             List<Integer> fractionNumberBlocks = fractionPart.compareTo(BigDecimal.ZERO) > 0 ? extractBlocks(fractionPart) : Collections.emptyList();
-            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), fractionNumberBlocks);
+            return new ThousandBlocksNumber(integerPart, fractionPart, originalNumber.scale(), extractBlocks(integerPart), fractionNumberBlocks);
         }
     }
 
@@ -48,16 +50,23 @@ public class Numbers2WordsParser {
         List<Integer> blocks = new ArrayList<>();
         while (number.compareTo(BigDecimal.ZERO) > 0) {
             if (number.compareTo(A_THOUSAND) == 0) {
-                blocks.add(1);
                 blocks.add(0);
+                blocks.add(1);
                 number = BigDecimal.ZERO;
-            } else if (number.compareTo(A_THOUSAND) < 0) {
+            } else if (number.compareTo(A_THOUSAND) < 0 && number.scale() == 0) {
                 blocks.add(number.intValue());
+                number = BigDecimal.ZERO;
+            } else if (number.intValue() == 0 && number.scale() != 0) {
+                if (number.unscaledValue().compareTo(BigInteger.ONE) == 0) {
+                    blocks.add(1);
+                } else {
+                    blocks = extractBlocks(new BigDecimal(number.unscaledValue()));
+                }
                 number = BigDecimal.ZERO;
             } else {
                 BigDecimal temp = number.movePointLeft(3);
                 BigDecimal fraction = temp.remainder(BigDecimal.ONE);
-                number = temp.subtract(fraction);
+                number = temp.subtract(fraction).stripTrailingZeros();
                 blocks.add(fraction.movePointRight(3).intValue());
             }
         }
@@ -67,32 +76,37 @@ public class Numbers2WordsParser {
 
     private String createTextualRepresentation(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
-        StringBuilder integerNumberBuilder = formatNumericBlocks(numberBlocks.getIntegerNumberBlocks());
-        StringBuilder fractionalNumberBuilder = formatNumericBlocks(numberBlocks.getFractionalNumberBlocks());
+        StringBuilder integerNumberBuilder = formatNumericBlocks(numberBlocks.getIntegerNumberBlocks(), true);
+        StringBuilder fractionalNumberBuilder = formatNumericBlocks(numberBlocks.getFractionalNumberBlocks(), false);
 
-        if (integerNumberBuilder != null &&
-                (!numberBlocks.isZeroInteger() || (numberBlocks.isZeroInteger() && wordOptions.isDisplayingZeroInteger()))) {
+        boolean isAddingIntegerPart = integerNumberBuilder != null &&
+                (!numberBlocks.isZeroInteger() || (numberBlocks.isZeroInteger() && wordOptions.getZeroDisplay().forInteger()));
+
+        if (isAddingIntegerPart) {
             builder.append(integerNumberBuilder);
-            if (wordOptions.isDisplayingIntegerUnit() ||
-                    wordOptions.isDisplayingIntegerUnit() && numberBlocks.isZeroInteger() && wordOptions.isAppendingSingularUnitToZero()) {
-                appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()));
+            if (wordOptions.getUnitDisplay().forInteger() ||
+                    wordOptions.getUnitDisplay().forInteger() && numberBlocks.isZeroInteger() && wordOptions.getAppendSingularUnitToZero().forInteger()) {
+                appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()), true);
             }
         }
         if (fractionalNumberBuilder != null) {
-            appendIfExists(builder, wordOptions.getDecimalSeparator());
-            builder.append(fractionalNumberBuilder);
-            if (wordOptions.isDisplayingDecimalScale()) {
-                appendIfExists(builder, numberBlocks.getScale() >= 0 ?
-                        searchSuffixWord("fraction.scale", numberBlocks.getScale()) : null);
+            if (isAddingIntegerPart) {
+                appendIfExists(builder, wordOptions.getDecimalSeparator(), false);
             }
-            if (wordOptions.isDisplayingDecimalUnit()) {
-                appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()));
+            builder.append(fractionalNumberBuilder);
+            if (wordOptions.getScaleDisplay().forFraction()) {
+                String scaleSuffix = numberBlocks.getScale() < 0 ? null :
+                        searchSuffixWord("fraction.scale." + numberBlocks.getScale(), numberBlocks.getFraction().intValue());
+                appendIfExists(builder, scaleSuffix, true);
+            }
+            if (wordOptions.getUnitDisplay().forFraction()) {
+                appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()), true);
             }
         }
         return builder.toString();
     }
 
-    private StringBuilder formatNumericBlocks(List<Integer> blocks) {
+    private StringBuilder formatNumericBlocks(List<Integer> blocks, boolean isIntegerPart) {
         int blockQuantity = blocks.size();
         StringBuilder wordBuilder = new StringBuilder();
         int prevNumber = Integer.MIN_VALUE;
@@ -101,24 +115,31 @@ public class Numbers2WordsParser {
         for (int i = 0; i < blockQuantity; i++) {
             int currNumber = blocks.get(i);
             int currScale = (blockQuantity - 1 - i) * 3;
-            if (i > 0 && wordOptions.getRule().useThousandSeparator(prevScale, currScale, prevNumber, currNumber, i, blockQuantity,
-                    wordBuilder.length() > 0)) {
-                wordBuilder.append(wordOptions.getThousandsSeparator());
-            } else if (wordBuilder.length() > 0) {
-                wordBuilder.append(' ');
-            }
-            StringBuilder text = composeNumericBlockText(currNumber);
-            wordBuilder.append(text);
+            boolean addNextBlock = currNumber != 0 || (isIntegerPart && wordOptions.getZeroDisplay().forInteger()) ||
+                    (!isIntegerPart && wordOptions.getZeroDisplay().forFraction());
+            addNextBlock = addNextBlock && (currNumber != 1 || (isIntegerPart && wordOptions.getSingularWordDisplay().forInteger()) ||
+                    (!isIntegerPart && wordOptions.getSingularWordDisplay().forFraction()));
 
+            if (addNextBlock) {
+                boolean lastBlock = true;
+                for (int j = i + 1; j < blockQuantity; j++) {
+                    lastBlock = lastBlock && blocks.get(j) == 0;
+                }
+                lastBlock = lastBlock || i == blockQuantity - 1;
 
-            String scaleWord = currScale >= 0 ? searchSuffixWord("integer.scale." + currScale, currScale) : null;
-            if (currScale > 0 && scaleWord == null) {
-                throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", currScale));
-            } else if (scaleWord != null) {
-                if (text.length() > 0) {
+                if (wordOptions.getRule().useThousandSeparator(prevScale, currScale, prevNumber, currNumber, i, blockQuantity,
+                        wordBuilder.length() > 0, lastBlock)) {
+                    wordBuilder.append(wordOptions.getThousandsSeparator());
+                } else if (wordBuilder.length() > 0) {
                     wordBuilder.append(' ');
                 }
-                wordBuilder.append(scaleWord);
+
+                StringBuilder text = composeNumericBlockText(currNumber);
+                String scaleWord = currScale >= 0 ? searchSuffixWord("integer.scale." + currScale, currNumber) : null;
+                if (currScale > 0 && scaleWord == null) {
+                    throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", currScale));
+                }
+                wordOptions.getRule().composeTextRepresentation(wordBuilder, currNumber, currScale, text, scaleWord, i, blockQuantity);
             }
             prevNumber = currNumber;
             prevScale = currScale;
@@ -134,9 +155,7 @@ public class Numbers2WordsParser {
 
         String word = searchNumberRepresentation(number, false);
         if (word != null) {
-            if (unitPart != 1 || wordOptions.isDisplayingSingularWord()) {
-                wordBuilder.append(word);
-            }
+            wordBuilder.append(word);
         } else {
             if (hundredPart != 0) {
                 String temp = searchNumberRepresentation(hundredPart, true);
@@ -160,7 +179,7 @@ public class Numbers2WordsParser {
                 checkExistence(temp, tenthPart, number);
                 wordBuilder.append(temp);
             } else {
-                if (unitPart != 1 || wordOptions.isDisplayingSingularWord()) {
+                if (unitPart != 1 || wordOptions.getSingularWordDisplay().forInteger()) {
                     String temp = searchNumberRepresentation(unitPart, true);
                     checkExistence(temp, unitPart, number);
                     wordBuilder.append(temp);
@@ -213,9 +232,12 @@ public class Numbers2WordsParser {
         }
     }
 
-    private void appendIfExists(StringBuilder builder, CharSequence value) {
+    private void appendIfExists(StringBuilder builder, CharSequence value, boolean addSpacePrefixChar) {
         if (value != null && value.length() > 0) {
-            builder.append(' ').append(value);
+            if (addSpacePrefixChar) {
+                builder.append(' ');
+            }
+            builder.append(value);
         }
     }
 

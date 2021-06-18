@@ -1,4 +1,4 @@
-decimal_separator=, 
+decimal_separator= e 
 thousands_separator= e 
 number_separator= e 
 integer.suffix.singular=inteiro

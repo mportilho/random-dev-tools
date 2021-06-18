@@ -1,20 +1,18 @@
 package io.github.mportilho.numbers2words;
 
 import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
+import io.github.mportilho.numbers2words.options.*;
 
 import java.util.Objects;
 import java.util.Properties;
 
 public final class N2WOptionsBuilder {
 
-    private boolean displayingIntegerUnit;
-    private boolean displayingDecimalUnit;
-    private boolean displayingDecimalScale;
-    private boolean displayingZeroInteger;
-    private boolean displayingSingularWord;
-    private boolean displayZeroFraction;
-    private boolean appendingSingularUnitToZero;
-    private boolean identifyOmittedIntegerUnitWhenNoIntegerFound;
+    private N2WUnitDisplay unitDisplay;
+    private N2WScaleDisplay scaleDisplay;
+    private N2WZeroDisplay zeroDisplay;
+    private N2WSingularWordDisplay singularWordDisplay;
+    private N2WAppendSingularUnitToZero appendSingularUnitToZero;
 
     private WordGender gender;
     private ThousandSeparatorRule rule;
@@ -29,12 +27,17 @@ public final class N2WOptionsBuilder {
         builder.properties = Objects.requireNonNull(properties, "Properties cannot be null");
         builder.gender = gender;
         builder.rule = rule;
+        builder.unitDisplay = N2WUnitDisplay.BOTH;
+        builder.scaleDisplay = N2WScaleDisplay.BOTH;
+        builder.zeroDisplay = N2WZeroDisplay.BOTH;
+        builder.singularWordDisplay = N2WSingularWordDisplay.BOTH;
+        builder.appendSingularUnitToZero = N2WAppendSingularUnitToZero.BOTH;
         return builder;
     }
 
     public Numbers2WordsOptions build() {
-        return new Numbers2WordsOptions(properties, gender, rule, displayingIntegerUnit, displayingDecimalUnit,
-                displayingDecimalScale, displayingZeroInteger, displayZeroFraction, displayingSingularWord, appendingSingularUnitToZero);
+        return new Numbers2WordsOptions(properties, gender, rule, unitDisplay, scaleDisplay, zeroDisplay,
+                singularWordDisplay, appendSingularUnitToZero);
     }
 
     public N2WOptionsBuilder setDecimalSeparator(String value) {
@@ -78,72 +81,49 @@ public final class N2WOptionsBuilder {
         return this;
     }
 
-    public N2WOptionsBuilder displayingIntegerUnit(boolean displayingIntegerUnit) {
-        this.displayingIntegerUnit = displayingIntegerUnit;
+    public N2WOptionsBuilder unitDisplay(N2WUnitDisplay unitDisplay) {
+        this.unitDisplay = unitDisplay;
         return this;
     }
 
-    public N2WOptionsBuilder displayingDecimalUnit(boolean displayingDecimalUnit) {
-        this.displayingDecimalUnit = displayingDecimalUnit;
+    public N2WOptionsBuilder scaleDisplay(N2WScaleDisplay scaleDisplay) {
+        this.scaleDisplay = scaleDisplay;
         return this;
     }
 
-    public N2WOptionsBuilder displayingDecimalScale(boolean displayingDecimalScale) {
-        this.displayingDecimalScale = displayingDecimalScale;
+    public N2WOptionsBuilder zeroDisplay(N2WZeroDisplay zeroDisplay) {
+        this.zeroDisplay = zeroDisplay;
         return this;
     }
 
-    public N2WOptionsBuilder displayZeroFraction(boolean displayZeroFraction) {
-        this.displayZeroFraction = displayZeroFraction;
+    public N2WOptionsBuilder singularWordDisplay(N2WSingularWordDisplay singularWordDisplay) {
+        this.singularWordDisplay = singularWordDisplay;
         return this;
     }
 
-    public N2WOptionsBuilder displayingZeroInteger(boolean displayingZeroInteger) {
-        this.displayingZeroInteger = displayingZeroInteger;
+    public N2WOptionsBuilder appendSingularUnitToZero(N2WAppendSingularUnitToZero appendSingularUnitToZero) {
+        this.appendSingularUnitToZero = appendSingularUnitToZero;
         return this;
     }
 
-    public N2WOptionsBuilder displayingSingularWord(boolean displayingSingularWord) {
-        this.displayingSingularWord = displayingSingularWord;
-        return this;
+    public N2WUnitDisplay getUnitDisplay() {
+        return unitDisplay;
     }
 
-    public N2WOptionsBuilder appendingSingularUnitToZero(boolean appendingSingularUnitToZero) {
-        this.appendingSingularUnitToZero = appendingSingularUnitToZero;
-        return this;
+    public N2WScaleDisplay getScaleDisplay() {
+        return scaleDisplay;
     }
 
-    public N2WOptionsBuilder identifyOmittedIntegerUnitWhenNoIntegerFound(boolean identifyOmittedIntegerUnitWhenNoIntegerFound) {
-        this.identifyOmittedIntegerUnitWhenNoIntegerFound = identifyOmittedIntegerUnitWhenNoIntegerFound;
-        return this;
+    public N2WZeroDisplay getZeroDisplay() {
+        return zeroDisplay;
     }
 
-    public boolean isDisplayingDecimalUnit() {
-        return displayingDecimalUnit;
+    public N2WSingularWordDisplay getSingularWordDisplay() {
+        return singularWordDisplay;
     }
 
-    public boolean isDisplayingZeroInteger() {
-        return displayingZeroInteger;
-    }
-
-    public boolean isAppendingSingularUnitToZero() {
-        return appendingSingularUnitToZero;
-    }
-
-    public boolean isIdentifyOmittedIntegerUnitWhenNoIntegerFound() {
-        return identifyOmittedIntegerUnitWhenNoIntegerFound;
-    }
-
-    public boolean isDisplayZeroFraction() {
-        return displayZeroFraction;
-    }
-
-    public boolean isDisplayingIntegerUnit() {
-        return displayingIntegerUnit;
-    }
-
-    public boolean isDisplayingDecimalScale() {
-        return displayingDecimalScale;
+    public N2WAppendSingularUnitToZero getAppendSingularUnitToZero() {
+        return appendSingularUnitToZero;
     }
 
     public WordGender getGender() {

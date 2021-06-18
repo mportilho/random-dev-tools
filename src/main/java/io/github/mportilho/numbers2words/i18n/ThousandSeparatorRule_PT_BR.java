@@ -9,9 +9,24 @@ public class ThousandSeparatorRule_PT_BR implements ThousandSeparatorRule {
 
     @Override
     public boolean useThousandSeparator(int prevScalar, int currScalar, int prevNumber, int currNumber,
-                                        int currIndex, int totalNumberBlocks, boolean textPreviouslyFound) {
-        boolean lastElement = currIndex == totalNumberBlocks - 1;
-        return textPreviouslyFound && lastElement && (HUNDREDS.contains(currNumber) || currNumber < 100);
+                                        int currIndex, int totalNumberBlocks, boolean textPreviouslyFound, boolean lastBlock) {
+        return textPreviouslyFound && lastBlock && (HUNDREDS.contains(currNumber) || currNumber < 100);
+    }
+
+    @Override
+    public void composeTextRepresentation(StringBuilder builder, int number, int scale, CharSequence numberWord,
+                                          CharSequence scaleWord, int currIndex, int totalNumberBlocks) {
+        if (number != 1 || currIndex != 0 || scale == 0) {
+            if (numberWord != null && numberWord.length() > 0) {
+                builder.append(numberWord);
+                if (scaleWord != null && scaleWord.length() > 0) {
+                    builder.append(' ');
+                }
+            }
+        }
+        if (scaleWord != null) {
+            builder.append(scaleWord);
+        }
     }
 
 }
