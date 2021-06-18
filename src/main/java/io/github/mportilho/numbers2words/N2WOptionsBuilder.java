@@ -1,5 +1,7 @@
 package io.github.mportilho.numbers2words;
 
+import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
+
 import java.util.Objects;
 import java.util.Properties;
 
@@ -10,26 +12,29 @@ public final class N2WOptionsBuilder {
     private boolean displayingDecimalScale;
     private boolean displayingZeroInteger;
     private boolean displayingSingularWord;
+    private boolean displayZeroFraction;
     private boolean appendingSingularUnitToZero;
     private boolean identifyOmittedIntegerUnitWhenNoIntegerFound;
 
     private WordGender gender;
+    private ThousandSeparatorRule rule;
     private Properties properties;
 
     private N2WOptionsBuilder() {
 
     }
 
-    public static N2WOptionsBuilder create(WordGender gender, Properties properties) {
+    public static N2WOptionsBuilder create(WordGender gender, Properties properties, ThousandSeparatorRule rule) {
         N2WOptionsBuilder builder = new N2WOptionsBuilder();
         builder.properties = Objects.requireNonNull(properties, "Properties cannot be null");
         builder.gender = gender;
+        builder.rule = rule;
         return builder;
     }
 
     public Numbers2WordsOptions build() {
-        return new Numbers2WordsOptions(properties, gender, displayingIntegerUnit, displayingDecimalUnit, displayingDecimalScale,
-                displayingZeroInteger, displayingSingularWord, appendingSingularUnitToZero);
+        return new Numbers2WordsOptions(properties, gender, rule, displayingIntegerUnit, displayingDecimalUnit,
+                displayingDecimalScale, displayingZeroInteger, displayZeroFraction, displayingSingularWord, appendingSingularUnitToZero);
     }
 
     public N2WOptionsBuilder setDecimalSeparator(String value) {
@@ -88,6 +93,11 @@ public final class N2WOptionsBuilder {
         return this;
     }
 
+    public N2WOptionsBuilder displayZeroFraction(boolean displayZeroFraction) {
+        this.displayZeroFraction = displayZeroFraction;
+        return this;
+    }
+
     public N2WOptionsBuilder displayingZeroInteger(boolean displayingZeroInteger) {
         this.displayingZeroInteger = displayingZeroInteger;
         return this;
@@ -124,6 +134,10 @@ public final class N2WOptionsBuilder {
         return identifyOmittedIntegerUnitWhenNoIntegerFound;
     }
 
+    public boolean isDisplayZeroFraction() {
+        return displayZeroFraction;
+    }
+
     public boolean isDisplayingIntegerUnit() {
         return displayingIntegerUnit;
     }
@@ -134,5 +148,9 @@ public final class N2WOptionsBuilder {
 
     public WordGender getGender() {
         return gender;
+    }
+
+    public ThousandSeparatorRule getRule() {
+        return rule;
     }
 }

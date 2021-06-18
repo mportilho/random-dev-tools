@@ -6,6 +6,7 @@ integer.suffix.plural=inteiros
 fraction.suffix.singular=centavo
 fraction.suffix.plural=centavos
 
+integer.number.0=zero
 integer.number.1=um
 integer.number.1.feminine.singular=uma
 integer.number.1.feminine.plural=umas

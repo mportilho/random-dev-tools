@@ -18,7 +18,7 @@ public class Numbers2WordsParser {
 
     public String parse(Number number) {
         ThousandBlocksNumber numberBlocks = partitionIntoBlocks(number);
-        return formatThousandBlocksNumber(numberBlocks);
+        return createTextualRepresentation(numberBlocks);
     }
 
     private ThousandBlocksNumber partitionIntoBlocks(Number source) {
@@ -32,7 +32,8 @@ public class Numbers2WordsParser {
             BigDecimal fractionPart = integerPart.abs().remainder(BigDecimal.ONE);
             integerPart = integerPart.subtract(fractionPart);
             fractionPart = fractionPart.movePointRight(integerPart.scale());
-            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), extractBlocks(fractionPart));
+            List<Integer> fractionNumberBlocks = fractionPart.compareTo(BigDecimal.ZERO) > 0 ? extractBlocks(fractionPart) : Collections.emptyList();
+            return new ThousandBlocksNumber(integerPart, fractionPart, integerPart.scale(), extractBlocks(integerPart), fractionNumberBlocks);
         }
     }
 
@@ -64,10 +65,10 @@ public class Numbers2WordsParser {
         return blocks;
     }
 
-    private String formatThousandBlocksNumber(ThousandBlocksNumber numberBlocks) {
+    private String createTextualRepresentation(ThousandBlocksNumber numberBlocks) {
         StringBuilder builder = new StringBuilder();
-        StringBuilder integerNumberBuilder = formatNumberBlocks(numberBlocks.getIntegerNumberBlocks());
-        StringBuilder fractionalNumberBuilder = formatNumberBlocks(numberBlocks.getFractionalNumberBlocks());
+        StringBuilder integerNumberBuilder = formatNumericBlocks(numberBlocks.getIntegerNumberBlocks());
+        StringBuilder fractionalNumberBuilder = formatNumericBlocks(numberBlocks.getFractionalNumberBlocks());
 
         if (integerNumberBuilder != null &&
                 (!numberBlocks.isZeroInteger() || (numberBlocks.isZeroInteger() && wordOptions.isDisplayingZeroInteger()))) {
@@ -91,32 +92,41 @@ public class Numbers2WordsParser {
         return builder.toString();
     }
 
-    private StringBuilder formatNumberBlocks(List<Integer> blocks) {
+    private StringBuilder formatNumericBlocks(List<Integer> blocks) {
         int blockQuantity = blocks.size();
         StringBuilder wordBuilder = new StringBuilder();
+        int prevNumber = Integer.MIN_VALUE;
+        int prevScale = Integer.MIN_VALUE;
 
         for (int i = 0; i < blockQuantity; i++) {
-            if (wordBuilder.length() > 0) {
+            int currNumber = blocks.get(i);
+            int currScale = (blockQuantity - 1 - i) * 3;
+            if (i > 0 && wordOptions.getRule().useThousandSeparator(prevScale, currScale, prevNumber, currNumber, i, blockQuantity,
+                    wordBuilder.length() > 0)) {
                 wordBuilder.append(wordOptions.getThousandsSeparator());
+            } else if (wordBuilder.length() > 0) {
+                wordBuilder.append(' ');
             }
-            StringBuilder text = composeTextualReference(blocks.get(i));
+            StringBuilder text = composeNumericBlockText(currNumber);
             wordBuilder.append(text);
 
-            int scale = (blockQuantity - 1 - i) * 3;
-            String scaleWord = scale >= 0 ? searchSuffixWord("integer.scale." + scale, scale) : null;
-            if (scale > 0 && scaleWord == null) {
-                throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", scale));
+
+            String scaleWord = currScale >= 0 ? searchSuffixWord("integer.scale." + currScale, currScale) : null;
+            if (currScale > 0 && scaleWord == null) {
+                throw new IllegalStateException(String.format("Scale description for integer scale of %d not found", currScale));
             } else if (scaleWord != null) {
                 if (text.length() > 0) {
                     wordBuilder.append(' ');
                 }
                 wordBuilder.append(scaleWord);
             }
+            prevNumber = currNumber;
+            prevScale = currScale;
         }
         return wordBuilder.length() > 0 ? wordBuilder : null;
     }
 
-    private StringBuilder composeTextualReference(int number) {
+    private StringBuilder composeNumericBlockText(int number) {
         StringBuilder wordBuilder = new StringBuilder();
         int hundredPart = (number / 100) * 100;
         int tenthPart = ((number - hundredPart) / 10) * 10;
@@ -142,14 +152,17 @@ public class Numbers2WordsParser {
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp).append(wordOptions.getNumberSeparator());
                     temp = searchNumberRepresentation(unitPart, true);
-                    checkExistence(temp, tenthPart, number);
+                    checkExistence(temp, unitPart, number);
                     wordBuilder.append(temp);
                 }
-            }
-            if (tenthPart == 0 && unitPart != 0) {
+            } else if (tenthPart != 0) {
+                String temp = searchNumberRepresentation(tenthPart, true);
+                checkExistence(temp, tenthPart, number);
+                wordBuilder.append(temp);
+            } else {
                 if (unitPart != 1 || wordOptions.isDisplayingSingularWord()) {
                     String temp = searchNumberRepresentation(unitPart, true);
-                    checkExistence(temp, tenthPart, number);
+                    checkExistence(temp, unitPart, number);
                     wordBuilder.append(temp);
                 }
             }

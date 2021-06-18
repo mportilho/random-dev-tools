@@ -1,11 +1,15 @@
 package io.github.mportilho.numbers2words;
 
+import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
+import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule_PT_BR;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
 public class TestPropertiesSearch {
+
+    private static final ThousandSeparatorRule RULE = new ThousandSeparatorRule_PT_BR();
 
     @Test
     public void testWordSearchFromNumbers() {
@@ -25,21 +29,21 @@ public class TestPropertiesSearch {
         Numbers2WordsOptions options;
         Numbers2WordsParser parser;
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties, RULE).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("2");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("3");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("8");
         Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
         Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties, RULE).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("4");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("5");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("9");
         Assertions.assertThat(parser.searchNumberRepresentation(4, true)).isEqualTo("11");
         Assertions.assertThat(parser.searchNumberRepresentation(4, false)).isEqualTo("12");
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties, RULE).build());
         Assertions.assertThat(parser.searchNumberRepresentation(1, false)).isEqualTo("6");
         Assertions.assertThat(parser.searchNumberRepresentation(2, false)).isEqualTo("7");
         Assertions.assertThat(parser.searchNumberRepresentation(3, false)).isEqualTo("10");
@@ -62,17 +66,17 @@ public class TestPropertiesSearch {
         Numbers2WordsOptions options;
         Numbers2WordsParser parser;
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.FEMININE, properties, RULE).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("1");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("2");
         Assertions.assertThat(parser.searchSuffixWord("integer-x2.suffix", 1)).isEqualTo("5");
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(WordGender.MASCULINE, properties, RULE).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("3");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("4");
         Assertions.assertThat(parser.searchSuffixWord("integer-x2.suffix", 2)).isEqualTo("6");
 
-        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties).build());
+        parser = new Numbers2WordsParser(N2WOptionsBuilder.create(null, properties, RULE).build());
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 1)).isEqualTo("7");
         Assertions.assertThat(parser.searchSuffixWord("integer.suffix", 2)).isEqualTo("8");
         Assertions.assertThat(parser.searchSuffixWord("fraction.suffix", 2)).isEqualTo("9");
