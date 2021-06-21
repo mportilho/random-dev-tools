@@ -1,7 +1,10 @@
 package io.github.mportilho.numbers2words;
 
-import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
-import io.github.mportilho.numbers2words.options.*;
+import io.github.mportilho.numbers2words.i18n.N2WLanguageRule;
+import io.github.mportilho.numbers2words.options.N2WAppendSingularUnitToZero;
+import io.github.mportilho.numbers2words.options.N2WScaleDisplay;
+import io.github.mportilho.numbers2words.options.N2WUnitDisplay;
+import io.github.mportilho.numbers2words.options.N2WZeroDisplay;
 
 import java.util.Properties;
 
@@ -9,24 +12,21 @@ public class Numbers2WordsOptions {
 
     private final Properties properties;
     private final WordGender gender;
-    private final ThousandSeparatorRule rule;
+    private final N2WLanguageRule rule;
 
     private final N2WUnitDisplay unitDisplay;
     private final N2WScaleDisplay scaleDisplay;
     private final N2WZeroDisplay zeroDisplay;
-    private final N2WSingularWordDisplay singularWordDisplay;
     private final N2WAppendSingularUnitToZero appendSingularUnitToZero;
 
-    protected Numbers2WordsOptions(Properties properties, WordGender gender, ThousandSeparatorRule rule, N2WUnitDisplay unitDisplay,
-                                   N2WScaleDisplay scaleDisplay, N2WZeroDisplay zeroDisplay,
-                                   N2WSingularWordDisplay singularWordDisplay, N2WAppendSingularUnitToZero appendSingularUnitToZero) {
+    protected Numbers2WordsOptions(Properties properties, WordGender gender, N2WLanguageRule rule, N2WUnitDisplay unitDisplay,
+                                   N2WScaleDisplay scaleDisplay, N2WZeroDisplay zeroDisplay, N2WAppendSingularUnitToZero appendSingularUnitToZero) {
         this.properties = properties;
         this.gender = gender;
         this.rule = rule;
         this.unitDisplay = unitDisplay;
         this.scaleDisplay = scaleDisplay;
         this.zeroDisplay = zeroDisplay;
-        this.singularWordDisplay = singularWordDisplay;
         this.appendSingularUnitToZero = appendSingularUnitToZero;
     }
 
@@ -38,7 +38,7 @@ public class Numbers2WordsOptions {
         return properties;
     }
 
-    public ThousandSeparatorRule getRule() {
+    public N2WLanguageRule getRule() {
         return rule;
     }
 
@@ -52,10 +52,6 @@ public class Numbers2WordsOptions {
 
     public N2WZeroDisplay getZeroDisplay() {
         return zeroDisplay;
-    }
-
-    public N2WSingularWordDisplay getSingularWordDisplay() {
-        return singularWordDisplay;
     }
 
     public N2WAppendSingularUnitToZero getAppendSingularUnitToZero() {

@@ -1,6 +1,6 @@
 package io.github.mportilho.numbers2words.i18n;
 
-public interface ThousandSeparatorRule {
+public interface N2WLanguageRule {
 
     public boolean useThousandSeparator(int prevScalar, int currScalar, int prevNumber, int currNumber,
                                         int currIndex, int totalNumberBlocks, boolean textPreviouslyFound, boolean lastBlock);

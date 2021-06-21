@@ -1,7 +1,7 @@
 package io.github.mportilho.numbers2words;
 
-import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule;
-import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule_PT_BR;
+import io.github.mportilho.numbers2words.i18n.N2WLanguageRule;
+import io.github.mportilho.numbers2words.i18n.ptbr.N2WLanguageRule_PT_BR;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public class TestPropertiesSearch {
 
-    private static final ThousandSeparatorRule RULE = new ThousandSeparatorRule_PT_BR();
+    private static final N2WLanguageRule RULE = new N2WLanguageRule_PT_BR();
 
     @Test
     public void testWordSearchFromNumbers() {

@@ -86,7 +86,7 @@ public class Numbers2WordsParser {
             builder.append(integerNumberBuilder);
             if (wordOptions.getUnitDisplay().forInteger() ||
                     wordOptions.getUnitDisplay().forInteger() && numberBlocks.isZeroInteger() && wordOptions.getAppendSingularUnitToZero().forInteger()) {
-                appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().intValue()), true);
+                appendIfExists(builder, searchSuffixWord("integer.suffix", numberBlocks.getInteger().longValue()), true);
             }
         }
         if (fractionalNumberBuilder != null) {
@@ -100,7 +100,7 @@ public class Numbers2WordsParser {
                 appendIfExists(builder, scaleSuffix, true);
             }
             if (wordOptions.getUnitDisplay().forFraction()) {
-                appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().intValue()), true);
+                appendIfExists(builder, searchSuffixWord("fraction.suffix", numberBlocks.getFraction().longValue()), true);
             }
         }
         return builder.toString();
@@ -115,12 +115,11 @@ public class Numbers2WordsParser {
         for (int i = 0; i < blockQuantity; i++) {
             int currNumber = blocks.get(i);
             int currScale = (blockQuantity - 1 - i) * 3;
-            boolean addNextBlock = currNumber != 0 || (isIntegerPart && wordOptions.getZeroDisplay().forInteger()) ||
+            boolean displayOnlyZero = currNumber != 0 || (isIntegerPart && wordOptions.getZeroDisplay().forInteger()) ||
                     (!isIntegerPart && wordOptions.getZeroDisplay().forFraction());
-            addNextBlock = addNextBlock && (currNumber != 1 || (isIntegerPart && wordOptions.getSingularWordDisplay().forInteger()) ||
-                    (!isIntegerPart && wordOptions.getSingularWordDisplay().forFraction()));
+            boolean doNotDisplayLastZero = !(currNumber == 0 && blockQuantity > 1);
 
-            if (addNextBlock) {
+            if (displayOnlyZero && doNotDisplayLastZero) {
                 boolean lastBlock = true;
                 for (int j = i + 1; j < blockQuantity; j++) {
                     lastBlock = lastBlock && blocks.get(j) == 0;
@@ -164,26 +163,22 @@ public class Numbers2WordsParser {
             }
             if (tenthPart != 0 && unitPart != 0) {
                 String temp = searchNumberRepresentation(tenthPart + unitPart, true);
-                if (temp != null) {
-                    wordBuilder.append(temp);
-                } else {
+                if (temp == null) {
                     temp = searchNumberRepresentation(tenthPart, true);
                     checkExistence(temp, tenthPart, number);
                     wordBuilder.append(temp).append(wordOptions.getNumberSeparator());
                     temp = searchNumberRepresentation(unitPart, true);
                     checkExistence(temp, unitPart, number);
-                    wordBuilder.append(temp);
                 }
+                wordBuilder.append(temp);
             } else if (tenthPart != 0) {
                 String temp = searchNumberRepresentation(tenthPart, true);
                 checkExistence(temp, tenthPart, number);
                 wordBuilder.append(temp);
             } else {
-                if (unitPart != 1 || wordOptions.getSingularWordDisplay().forInteger()) {
-                    String temp = searchNumberRepresentation(unitPart, true);
-                    checkExistence(temp, unitPart, number);
-                    wordBuilder.append(temp);
-                }
+                String temp = searchNumberRepresentation(unitPart, true);
+                checkExistence(temp, unitPart, number);
+                wordBuilder.append(temp);
             }
         }
         return wordBuilder;
@@ -192,16 +187,16 @@ public class Numbers2WordsParser {
     protected String searchNumberRepresentation(int number, boolean modifierFirst) {
         WordCountType numberType = number == 1 ? WordCountType.SINGULAR : WordCountType.PLURAL;
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
-        String searchPhrase = new StringBuilder("integer.number.").append(number).append(modifierFirst ? "+" : "").toString();
+        String searchPhrase = "integer.number." + number + (modifierFirst ? "+" : "");
         String value = findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
         if (value == null) {
-            searchPhrase = new StringBuilder("integer.number.").append(number).append(!modifierFirst ? "+" : "").toString();
+            searchPhrase = "integer.number." + number + (!modifierFirst ? "+" : "");
             return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
         }
         return value;
     }
 
-    protected String searchSuffixWord(String searchPhrase, int number) {
+    protected String searchSuffixWord(String searchPhrase, long number) {
         WordCountType numberType = number == 1 ? WordCountType.SINGULAR : WordCountType.PLURAL;
         String wordGender = wordOptions.getGender() != null ? wordOptions.getGender().getLabel() : "";
         return findPropertyValueWithClassifier(searchPhrase, wordGender, numberType.getLabel());
@@ -210,18 +205,16 @@ public class Numbers2WordsParser {
     private String findPropertyValueWithClassifier(String searchPhrase, String wordGender, String numberType) {
         String value = null;
         if (wordGender != null && !wordGender.isBlank()) {
-            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(wordGender)
-                    .append('.').append(numberType).toString());
+            value = wordOptions.getProperties().getProperty(searchPhrase + '.' + wordGender + '.' + numberType);
             if (value == null || value.isBlank()) {
-                value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(wordGender)
-                        .toString());
+                value = wordOptions.getProperties().getProperty(searchPhrase + '.' + wordGender);
             }
         }
         if (value == null || value.isBlank()) {
-            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).append('.').append(numberType).toString());
+            value = wordOptions.getProperties().getProperty(searchPhrase + '.' + numberType);
         }
         if (value == null || value.isBlank()) {
-            value = wordOptions.getProperties().getProperty(new StringBuilder(searchPhrase).toString());
+            value = wordOptions.getProperties().getProperty(searchPhrase);
         }
         return value;
     }

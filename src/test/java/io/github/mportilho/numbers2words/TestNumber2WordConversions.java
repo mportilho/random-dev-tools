@@ -1,9 +1,8 @@
 package io.github.mportilho.numbers2words;
 
 import io.github.mportilho.assertions.Asserts;
-import io.github.mportilho.numbers2words.i18n.ThousandSeparatorRule_PT_BR;
+import io.github.mportilho.numbers2words.i18n.ptbr.N2WLanguageRule_PT_BR;
 import io.github.mportilho.numbers2words.options.N2WScaleDisplay;
-import io.github.mportilho.numbers2words.options.N2WSingularWordDisplay;
 import io.github.mportilho.numbers2words.options.N2WUnitDisplay;
 import io.github.mportilho.numbers2words.options.N2WZeroDisplay;
 import io.github.mportilho.resources.ResourceLoader;
@@ -57,13 +56,15 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(Numbers2WordsParser.extractBlocks(new BigDecimal("0.01"))).hasSize(1).contains(1);
         Assertions.assertThat(Numbers2WordsParser.extractBlocks(new BigDecimal("0.001"))).hasSize(1).contains(1);
         Assertions.assertThat(Numbers2WordsParser.extractBlocks(new BigDecimal("0.0001"))).hasSize(1).contains(1);
+        Assertions.assertThat(Numbers2WordsParser.extractBlocks(new BigDecimal("0.5500"))).hasSize(1).contains(55);
     }
 
     @Test
     public void testIntegersInFullFormalFormatter() {
-        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new ThousandSeparatorRule_PT_BR())
-                .unitDisplay(N2WUnitDisplay.NONE).zeroDisplay(N2WZeroDisplay.NONE);
+        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new N2WLanguageRule_PT_BR())
+                .unitDisplay(N2WUnitDisplay.NONE);
         Numbers2WordsParser parser = new Numbers2WordsParser(builder.build());
+        Assertions.assertThat(parser.parse(0)).isEqualTo("zero");
         Assertions.assertThat(parser.parse(1)).isEqualTo("um");
         Assertions.assertThat(parser.parse(2)).isEqualTo("dois");
         Assertions.assertThat(parser.parse(3)).isEqualTo("três");
@@ -78,6 +79,8 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(parser.parse(1001)).isEqualTo("mil e um");
         Assertions.assertThat(parser.parse(1010)).isEqualTo("mil e dez");
         Assertions.assertThat(parser.parse(1100)).isEqualTo("mil e cem");
+        Assertions.assertThat(parser.parse(1101)).isEqualTo("mil cento e um");
+        Assertions.assertThat(parser.parse(1111)).isEqualTo("mil cento e onze");
         Assertions.assertThat(parser.parse(37)).isEqualTo("trinta e sete");
         Assertions.assertThat(parser.parse(237)).isEqualTo("duzentos e trinta e sete");
         Assertions.assertThat(parser.parse(207)).isEqualTo("duzentos e sete");
@@ -101,12 +104,11 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(parser.parse(2001000000)).isEqualTo("dois bilhões e um milhão");
         Assertions.assertThat(parser.parse(2100000000)).isEqualTo("dois bilhões e cem milhões");
         Assertions.assertThat(parser.parse(2100001000)).isEqualTo("dois bilhões cem milhões e um mil");
-//        Assertions.assertThat(parser.parse(37)).isEqualTo("");
     }
 
     @Test
-    public void testIntegersInFullFormalFormatter_More() throws Exception {
-        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new ThousandSeparatorRule_PT_BR())
+    public void testIntegersWithSuffixInFullFormalFormatter() {
+        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new N2WLanguageRule_PT_BR())
                 .unitDisplay(N2WUnitDisplay.INTEGER_ONLY).zeroDisplay(N2WZeroDisplay.NONE);
         Numbers2WordsParser parser = new Numbers2WordsParser(builder.build());
         Assertions.assertThat(parser.parse(54352231.009543459)).isEqualTo("cinquenta e quatro milhões trezentos e cinquenta e dois mil duzentos e trinta e um inteiros e nove milhões quinhentos e quarenta e três mil quatrocentos e cinquenta e seis bilionésimos");
@@ -117,14 +119,12 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(parser.parse(1)).isEqualTo("um inteiro");
         Assertions.assertThat(parser.parse(5)).isEqualTo("cinco inteiros");
         Assertions.assertThat(parser.parse(10)).isEqualTo("dez inteiros");
-//        Assertions.assertThat(parser.parse(37)).isEqualTo("");
     }
 
     @Test
     public void testFractionsInFullFormalFormatter() {
-        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new ThousandSeparatorRule_PT_BR())
-                .unitDisplay(N2WUnitDisplay.NONE).singularWordDisplay(N2WSingularWordDisplay.BOTH)
-                .scaleDisplay(N2WScaleDisplay.FRACTION_ONLY).zeroDisplay(N2WZeroDisplay.NONE);
+        N2WOptionsBuilder builder = N2WOptionsBuilder.create(WordGender.MASCULINE, properties, new N2WLanguageRule_PT_BR())
+                .unitDisplay(N2WUnitDisplay.NONE).scaleDisplay(N2WScaleDisplay.FRACTION_ONLY).zeroDisplay(N2WZeroDisplay.NONE);
         Numbers2WordsParser parser = new Numbers2WordsParser(builder.build());
         Assertions.assertThat(parser.parse(0.1)).isEqualTo("um décimo");
         Assertions.assertThat(parser.parse(0.01)).isEqualTo("um centésimo");
@@ -139,11 +139,10 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(parser.parse(0.37)).isEqualTo("trinta e sete centésimos");
         Assertions.assertThat(parser.parse(0.237)).isEqualTo("duzentos e trinta e sete milésimos");
         Assertions.assertThat(parser.parse(0.85)).isEqualTo("oitenta e cinco centésimos");
-//        Assertions.assertThat(parser.parse(37)).isEqualTo("");
-//        Assertions.assertThat(parser.parse(37)).isEqualTo("");
-//        Assertions.assertThat(parser.parse(1.207)).isEqualTo("um e duzentos e sete milésimos");
-//        Assertions.assertThat(parser.parse(2.5500)).isEqualTo("dois e cinco mil e quinhentos décimos de milésimos");
-//        Assertions.assertThat(parser.parse(1002.1300)).isEqualTo("mil e trezentos");
+        Assertions.assertThat(parser.parse(1.207)).isEqualTo("um e duzentos e sete milésimos");
+        Assertions.assertThat(parser.parse(2.5500)).isEqualTo("dois e cinquenta e cinco centésimos");
+        Assertions.assertThat(parser.parse(1000.1300)).isEqualTo("mil e treze centésimos");
+        Assertions.assertThat(parser.parse(1002.1300)).isEqualTo("mil e dois e treze centésimos");
     }
 
 }

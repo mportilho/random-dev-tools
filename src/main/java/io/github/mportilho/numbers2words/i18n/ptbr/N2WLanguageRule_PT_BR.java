@@ -1,9 +1,11 @@
-package io.github.mportilho.numbers2words.i18n;
+package io.github.mportilho.numbers2words.i18n.ptbr;
+
+import io.github.mportilho.numbers2words.i18n.N2WLanguageRule;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ThousandSeparatorRule_PT_BR implements ThousandSeparatorRule {
+public class N2WLanguageRule_PT_BR implements N2WLanguageRule {
 
     private static final List<Integer> HUNDREDS = Arrays.asList(100, 200, 300, 400, 500, 600, 700, 800, 900);
 
