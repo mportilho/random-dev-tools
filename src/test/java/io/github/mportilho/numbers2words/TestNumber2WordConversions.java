@@ -104,6 +104,15 @@ public class TestNumber2WordConversions {
         Assertions.assertThat(parser.parse(2001000000)).isEqualTo("dois bilhões e um milhão");
         Assertions.assertThat(parser.parse(2100000000)).isEqualTo("dois bilhões e cem milhões");
         Assertions.assertThat(parser.parse(2100001000)).isEqualTo("dois bilhões cem milhões e um mil");
+
+        Assertions.assertThat(parser.parse(8425961637L)).isEqualTo("oito bilhões quatrocentos e vinte e cinco milhões novecentos e sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(425961637)).isEqualTo("quatrocentos e vinte e cinco milhões novecentos e sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(25961637)).isEqualTo("vinte e cinco milhões novecentos e sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(5961637)).isEqualTo("cinco milhões novecentos e sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(961637)).isEqualTo("novecentos e sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(61637)).isEqualTo("sessenta e um mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(1637)).isEqualTo("mil seiscentos e trinta e sete");
+        Assertions.assertThat(parser.parse(637)).isEqualTo("seiscentos e trinta e sete");
     }
 
     @Test

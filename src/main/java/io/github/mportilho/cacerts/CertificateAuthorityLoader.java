@@ -11,7 +11,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
-public final class CertificateAuthorityLoader {
+final class CertificateAuthorityLoader {
 
     private static final int FILE_SYSTEM_PRIORITY = 5;
     private static final int JAR_PRIORITY = 10;

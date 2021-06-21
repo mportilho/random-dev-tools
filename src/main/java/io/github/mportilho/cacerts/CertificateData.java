@@ -2,7 +2,7 @@ package io.github.mportilho.cacerts;
 
 import java.util.Objects;
 
-public class CertificateData {
+class CertificateData {
 
     private final String path;
     private final byte[] content;

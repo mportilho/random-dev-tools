@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class CertificateAssemblerX509 {
+class CertificateAssemblerX509 {
 
     protected static final List<String> CERT_EXTENSIONS = Arrays.asList(".pem", ".cer");
 

@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public class CompositeX509TrustManager implements X509TrustManager {
+class CompositeX509TrustManager implements X509TrustManager {
 
     private final List<X509TrustManager> trustManagers;
 

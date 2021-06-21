@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public class CompositeX509KeyManager implements X509KeyManager {
+class CompositeX509KeyManager implements X509KeyManager {
 
     private final List<X509KeyManager> keyManagers;
 
